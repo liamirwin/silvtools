@@ -43,10 +43,10 @@ crown_mask <- function(chunk, chm_res = 0.25, chm_cutoff_percent = 0.5, ws = 2, 
     crowns_p <- sf::st_as_sf(terra::as.polygons(crowns))
     crowns_mask_p <- sf::st_as_sf(terra::as.polygons(crowns_masked))
     # Plotting (Optional)
-    plot(chm)
-    plot(sf::st_geometry(crowns_p), add = T, border = 'blue',lty = 2)
-    plot(sf::st_geometry(crowns_mask_p), add = T, border = 'red',lty = 2)
-    plot(sf::st_geometry(ttops), add = T)
+    terra::plot(chm)
+    sf::plot_sf(sf::st_geometry(crowns_p), add = T, border = 'blue',lty = 2)
+    sf::plot_sf(sf::st_geometry(crowns_mask_p), add = T, border = 'red',lty = 2)
+    sf::plot_sf(sf::st_geometry(ttops), add = T)
   }
 
   return(crowns_masked)
