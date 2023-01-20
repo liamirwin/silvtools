@@ -3,3 +3,4 @@
 export(crown_mask)
 export(dir_setup_als)
 export(mcwatershed)
+export(solar_simulator)
