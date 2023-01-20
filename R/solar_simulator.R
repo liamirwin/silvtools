@@ -1,120 +1,52 @@
-# Rayshading solar simulator function
-#' Title
+#' Rayshading solar simulator function
 #'
-#' @param dsm_file
-#' @param weekday
-#' @param time_df
-#' @param proj_dir
-#' @param site_name
-#' @param aoi_file
-#' @param sun_pos
-#' @param interval
-#' @param start_time
-#' @param end_time
-#' @param filt
+#' @param dsm_file File path to DSM file of interest typically 'path/dsm.tif'
+#' @param proj_dir Directory for block/acquisition creates an /output/irradiance folder within proj_dir
+#' @param site_name Site name for file naming purposes ex 'CT1'
+#' @param aoi_file Optional area of interest for internal cropping of DSM
+#' @param sun_pos Sun position data frame from get_sun_pos, zenith, azimuth for each timepoint of interest
 #'
-#' @return
+#' @return Writes a raster for each timepoint recording the irradiance for each given pixel
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#'
+#' dsm_file <- 'H:/Quesnel_2022/blocks/CT1-DAP/output/raster/dsm/CT1-DAP_dsm_fill_p2r_0.05m.tif'
+#' proj_dir <- 'H:/Quesnel_2022/blocks/CT1-DAP'
+#' site_name <- 'CT1-DAP'
+#' aoi_file <- 'H:/Quesnel_2022/blocks/CT1-DAP/input/vector/CT1P1_buffer.shp'
+#'
+#' sun_pos <- get_solar_pos(start_date, end_date, interval, lat, lon)
+#' solar_simulator(dsm_file, proj_dir, site_name, aoi_file, sun_pos)
+#' }
+#'
 solar_simulator <- function(dsm_file,
-                            weekday = 'Mon',
-                            time_df,
                             proj_dir,
                             site_name,
                             aoi_file = NULL,
-                            sun_pos,
-                            interval,
-                            start_time,
-                            end_time,
-                            filt = FALSE){
+                            sun_pos){
 
   sim_start <- Sys.time()
-
-
-  # Filter time dataframe for target day of the week/intervals
-
-  filter_by_interval <- function(data,
-                                 interval, # Options: "10min", "30min", "hour"
-                                 weekday, # Options: "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday","Sunday"
-                                 start_time, # Starting hour (1:24)
-                                 end_time # Ending hour (1:24)
-  ) {
-    tictoc::tic()
-
-    if (interval %in% c("10min", "30min", "60min")) {
-      if (weekday %in% c("Mon",
-                         "Tue",
-                         "Wed",
-                         "Thu",
-                         "Fri",
-                         "Sat",
-                         "Sun")) {
-        if (interval == "10min") {
-          filtered_data <-
-            data %>% filter(
-              as.numeric(hour) %in% c(start_time:end_time),
-              as.numeric(min) %% 10 == 0,
-              weekday == lubridate::wday(date, label = TRUE)
-            )
-        } else if (interval == "30min") {
-          filtered_data <- data %>% filter(
-            as.numeric(hour) %in% c(start_time:end_time),
-            as.numeric(min) %in% c(0, 30),
-            weekday == lubridate::wday(date, label = TRUE)
-          )
-        } else if (interval == "60min") {
-          filtered_data <- data %>% filter(
-            as.numeric(min) == 0,
-            as.numeric(hour) %in% c(start_time:end_time),
-            weekday == lubridate::wday(date, label = TRUE)
-          )
-        }
-
-      } else {
-        stop("Invalid weekday, please choose from: Mon, Tue, Wed, Thu, Fri, Sat, Sun")
-      }
-    }
-    print(
-      glue::glue(
-        'Filtered out {nrow(data) - nrow(filtered_data)} ({round((nrow(data) - nrow(filtered_data))/nrow(data)*100)}%)
-                   timepoints, keeping every solar positions for {weekday} every {interval} interval'
-      )
-    )
-    tictoc::toc()
-    return(filtered_data)
-  }
-
-  if (filt == TRUE) {
-    filtered_times <- filter_by_interval(
-      data = sun_pos,
-      interval = interval,
-      weekday = weekday,
-      start_time = start_time,
-      end_time = end_time
-    )
-    print('hoho')
-  } else {
-    filtered_times <- sun_pos
-    print('Filter == FALSE so timepoints not filtered')
-  }
   # Load DSM raster and crop if aoi provided (useful for testing/benchmarking)
   if(!is.null(aoi_file)) {
-    aoi <- st_read(aoi_file)
-    dsm <- terra::rast(dsm_file) %>% terra::crop(aoi)
+    aoi <- sf::st_read(aoi_file)
+    dsm <- terra::rast(dsm_file) %>% terra::crop(terra::vect(aoi))
+    print('DSM cropped to provided area of interest')
   } else{
     dsm <- terra::rast(dsm_file)
+    print('DSM raster successfully loaded')
   }
   # Convert to matrix for rayshader
   rasM <- rayshader::raster_to_matrix(dsm)
-
   # Create output directory for irradiance models if it doesnt exist
   if(!dir.exists(glue::glue('{proj_dir}/output/raster/irradiance'))) {
     dir.create(glue::glue('{proj_dir}/output/raster/irradiance'),
                recursive = T)
+    print('Created directory for saving irradiance files /output/irradiance')
   }
 
-  print(glue::glue('Beginning rayshading process of {site_name} DSM for {nrow(filtered_times)} timepoitns at {Sys.time()}'))
+  print(glue::glue('Beginning rayshading process of {site_name} DSM for {nrow(filtered_times)} timepoints at {Sys.time()}'))
 
   for(k in 1:nrow(filtered_times)){
     tictoc::tic()
@@ -148,6 +80,5 @@ solar_simulator <- function(dsm_file,
       overwrite = T
     )
     tictoc::toc()
-
   }
 }

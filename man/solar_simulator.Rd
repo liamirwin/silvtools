@@ -2,25 +2,37 @@
 % Please edit documentation in R/solar_simulator.R
 \name{solar_simulator}
 \alias{solar_simulator}
-\title{Title}
+\title{Rayshading solar simulator function}
 \usage{
-solar_simulator(
-  dsm_file,
-  weekday = "Mon",
-  time_df,
-  proj_dir,
-  site_name,
-  aoi_file = NULL,
-  sun_pos,
-  interval,
-  start_time,
-  end_time,
-  filt = FALSE
-)
+solar_simulator(dsm_file, proj_dir, site_name, aoi_file = NULL, sun_pos)
 }
 \arguments{
-\item{filt}{}
+\item{dsm_file}{File path to DSM file of interest typically 'path/dsm.tif'}
+
+\item{proj_dir}{Directory for block/acquisition creates an /output/irradiance folder within proj_dir}
+
+\item{site_name}{Site name for file naming purposes ex 'CT1'}
+
+\item{aoi_file}{Optional area of interest for internal cropping of DSM}
+
+\item{sun_pos}{Sun position data frame from get_sun_pos, zenith, azimuth for each timepoint of interest}
+}
+\value{
+Writes a raster for each timepoint recording the irradiance for each given pixel
 }
 \description{
-Title
+Rayshading solar simulator function
+}
+\examples{
+\dontrun{
+
+dsm_file <- 'H:/Quesnel_2022/blocks/CT1-DAP/output/raster/dsm/CT1-DAP_dsm_fill_p2r_0.05m.tif'
+proj_dir <- 'H:/Quesnel_2022/blocks/CT1-DAP'
+site_name <- 'CT1-DAP'
+aoi_file <- 'H:/Quesnel_2022/blocks/CT1-DAP/input/vector/CT1P1_buffer.shp'
+
+sun_pos <- get_solar_pos(start_date, end_date, interval, lat, lon)
+solar_simulator(dsm_file, proj_dir, site_name, aoi_file, sun_pos)
+}
+
 }
