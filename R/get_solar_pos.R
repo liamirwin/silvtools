@@ -1,20 +1,26 @@
-#Get solar positions ' Title ' ' @param start_date ' @param end_date ' @param
-#interval ' @param lat ' @param lon ' ' @return ' @export '
-#' @examples{
+#' Get solar positions
 #'
-#' # Start and end date for observations
+#' @param start_date Start date/time (POSIXct format)
+#' @param end_date End date/time (POSIXct format)
+#' @param interval Observation interval one of: '10 min', '30 min', 'hour'
+#' @param lat Numeric latitude value (WGS84)
+#' @param lon Numeric longitude value (WGS84)
+#'
+#' @return Returns a dataframe of solar positions for given location and time period
+#' @export
+#'
+#'
+#' @examples
+#' \dontrun{
 #' start_date <- as.POSIXct("2022-05-15 00:00:00", tz = "America/Los_Angeles")
 #' end_date <- as.POSIXct("2022-09-15 00:00:00", tz = "America/Los_Angeles")
-#' Observation interval ('10 min', '30 min', 'hour')
 #' interval <- '10 min'
-#' Latitude and longitude of area of interest
 #' lat <- 53.371759251761766
 #' lon <- -122.76808019195623
 #'
 #' solar_pos <- get_solar_pos(start_date, end_date, interval, lat, lon)
+#' }
 #'
-#'
-# #
 get_solar_pos <- function(start_date,
                           end_date,
                           interval,
@@ -44,10 +50,10 @@ get_solar_pos <- function(start_date,
   solarPos = suncalc::getSunlightPosition(date = time_df$date_posixct,
                                           lat = lat,
                                           lon = lon) %>%
-    mutate(alt_deg = altitude * 180 / pi,
-           az_deg = 180 + azimuth * 180 / pi) %>% rename(date_posixct = date)
+    dplyr::mutate(alt_deg = altitude * 180 / pi,
+           az_deg = 180 + azimuth * 180 / pi) %>% dplyr::rename(date_posixct = date)
 
-  time_df <- merge(time_df, solarPos, by = 'date_posixct')
+  time_df <- dplyr::merge(time_df, solarPos, by = 'date_posixct')
 
   tictoc::toc()
   return(time_df)

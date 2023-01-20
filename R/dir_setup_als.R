@@ -15,7 +15,7 @@
 #' @export
 #'
 #' @examples
-#' proj_dir <- 'D:/BC/MKRF/Mixedwoods_trial_2022
+#' proj_dir <- 'D:/BC/MKRF/Mixedwoods_trial_2022'
 #' dir_setup_als(proj_dir)
 dir_setup_als <- function(proj_dir){
 

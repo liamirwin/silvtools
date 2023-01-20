@@ -24,3 +24,7 @@ input/raster, input/lidar, input/vector, and associated output folders generated
 \description{
 Setup ALS Directories
 }
+\examples{
+proj_dir <- 'D:/BC/MKRF/Mixedwoods_trial_2022'
+dir_setup_als(proj_dir)
+}
