@@ -53,7 +53,7 @@ get_solar_pos <- function(start_date,
     dplyr::mutate(alt_deg = altitude * 180 / pi,
            az_deg = 180 + azimuth * 180 / pi) %>% dplyr::rename(date_posixct = date)
 
-  time_df <- data.table::merge(time_df, solarPos, by = 'date_posixct')
+  time_df <- merge(time_df, solarPos, by = 'date_posixct')
 
   tictoc::toc()
   return(time_df)
