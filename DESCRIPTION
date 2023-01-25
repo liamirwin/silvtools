@@ -8,7 +8,8 @@ Description: This package is my first attempt and focusing on reproducible
     remotely datasets used in my PhD project focused on fine-scale remote
     sensing to inform mid-rotation silvicultural management and research.
 License: MIT + file LICENSE
-Imports: 
+Imports:
+    alphashape3d,
     data.table,
     dplyr,
     glue,
@@ -17,9 +18,13 @@ Imports:
     lubridate,
     magick,
     magrittr,
+    purrr,
     raster,
     rayshader,
+    SearchTrees,
     sf,
+    siplab,
+    spatstat.geom,
     stringr,
     suncalc,
     terra,

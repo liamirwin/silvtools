@@ -16,7 +16,15 @@ create_animation(proj_dir, fps = 10, label = TRUE, filetype = ".tif$")
 
 \item{filetype}{File type of animation images; default assumes raster in .tif format}
 }
+\value{
+Saves a .gif file locally
+}
 \description{
 Create Animation
 Animates solar irradiance tifs (or any images) into gif and saves locally
+}
+\examples{
+proj_dir <- 'H:/Quesnel_2022/blocks/CT1-DAP'
+create_animation(proj_dir)
+
 }

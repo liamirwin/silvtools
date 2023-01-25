@@ -5,14 +5,12 @@
 #' @param label Logical; TRUE/FALSE. Determines if final animation is annotated with YYYY-MM-DD HH:MM:SS time stamp for each frame
 #' @param filetype File type of animation images; default assumes raster in .tif format
 #'
-#' @return
+#' @return Saves a .gif file locally
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' proj_dir <- 'H:/Quesnel_2022/blocks/CT1-DAP
+#' proj_dir <- 'H:/Quesnel_2022/blocks/CT1-DAP'
 #' create_animation(proj_dir)
-#' }
 #'
 create_animation <- function(proj_dir,
                              fps = 10,
