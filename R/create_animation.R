@@ -1,29 +1,30 @@
 #' Create Animation
 #' Animates solar irradiance tifs (or any images) into gif and saves locally
-#' @param proj_dir Directory wher eproject is stored; expects an /output/raster/irradiance from solar_simulator, creates a /gifs output folder for saving
+#' @param proj_dir Directory where rasters from solar_simulator are stored (.tifs), creates a /gifs output folder for saving
 #' @param fps Chosen frames per second for final gif; change depending on number of images default is 10 fps
 #' @param label Logical; TRUE/FALSE. Determines if final animation is annotated with YYYY-MM-DD HH:MM:SS time stamp for each frame
 #' @param filetype File type of animation images; default assumes raster in .tif format
+#' @param sitename string name of site ex 'CT1P1'
 #'
 #' @return Saves a .gif file locally
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' proj_dir <- 'H:/Quesnel_2022/blocks/CT1-DAP'
-#' create_animation(proj_dir)
-#'
+#' create_animation(proj_dir, sitename = 'CT1P1')
+#' }
 create_animation <- function(proj_dir,
                              fps = 10,
                              label = TRUE,
-                             filetype = '.tif$'){
+                             filetype = '.tif$',
+                             sitename){
   tictoc::tic()
-  # Directory setup expects irradiance rasters in img_dir
+  # Directory should be where irradiance tifs are stored
   gif_dir <- glue::glue('{proj_dir}/gifs')
-  img_dir <- glue::glue('{proj_dir}/output/raster/irradiance')
-  acq <- basename(proj_dir)
-  print(glue::glue('Creating animation for {acq}'))
+  print(glue::glue('Creating animation for {sitename}'))
   # Get list of images
-  image_files <- list.files(path = img_dir, pattern = filetype, full.names = TRUE)
+  image_files <- list.files(path = proj_dir, pattern = filetype, full.names = TRUE)
   # Get creation times of image files
   image_times <- file.info(image_files)$ctime
   # Sort image files by creation time
@@ -64,9 +65,9 @@ create_animation <- function(proj_dir,
   if(!dir.exists(gif_dir)){dir.create(gif_dir)}
   # Write gif, lengthly process...
   magick::image_write(image = img_animated,
-                      path = glue::glue('{gif_dir}/{acq}_{fps}FPS.gif'))
+                      path = glue::glue('{gif_dir}/{sitename}_{fps}FPS.gif'))
   print(glue::glue('Successfully created and wrote irradiance gif with
                  length(image_list) frames at {fps}FPS
-                 for {acq} to {proj_dir}/gifs'))
+                 for {sitename} to {proj_dir}/gifs'))
   tictoc::toc()
 }

@@ -3,7 +3,7 @@
 #' @param dsm_file File path to DSM file of interest typically 'path/dsm.tif'
 #' @param proj_dir Directory for block/acquisition creates an /output/irradiance folder within proj_dir
 #' @param site_name Site name for file naming purposes ex 'CT1'
-#' @param aoi_file Optional area of interest for internal cropping of DSM
+#' @param aoi_file Optional area of interest for internal cropping of DSM either file pointing to shp/gpkg etc or loaded sf object
 #' @param sun_pos Sun position data frame from get_sun_pos, zenith, azimuth for each timepoint of interest
 #'
 #' @return Writes a raster for each timepoint recording the irradiance for each given pixel
@@ -29,8 +29,13 @@ solar_simulator <- function(dsm_file,
 
   sim_start <- Sys.time()
   # Load DSM raster and crop if aoi provided (useful for testing/benchmarking)
-  if(!is.null(aoi_file)) {
-    aoi <- sf::st_read(aoi_file)
+
+  if (!is.null(aoi_file)) {
+    if ('sf' %in% class(aoi_file)) {
+      aoi <- aoi_file
+    } else{
+      aoi <- sf::st_read(aoi_file)
+    }
     dsm <- terra::rast(dsm_file) %>% terra::crop(terra::vect(aoi))
     print('DSM cropped to provided area of interest')
   } else{
@@ -40,21 +45,21 @@ solar_simulator <- function(dsm_file,
   # Convert to matrix for rayshader
   rasM <- rayshader::raster_to_matrix(dsm)
   # Create output directory for irradiance models if it doesnt exist
-  if(!dir.exists(glue::glue('{proj_dir}/output/raster/irradiance'))) {
-    dir.create(glue::glue('{proj_dir}/output/raster/irradiance'),
+  if(!dir.exists(glue::glue('{proj_dir}/output/raster/irradiance/{site_name}'))) {
+    dir.create(glue::glue('{proj_dir}/output/raster/irradiance/{site_name}'),
                recursive = T)
-    print('Created directory for saving irradiance files /output/irradiance')
+    print(glue::glue('Created directory for saving irradiance files /output/irradiance/{site_name}'))
   }
 
-  print(glue::glue('Beginning rayshading process of {site_name} DSM for {nrow(filtered_times)} timepoints at {Sys.time()}'))
+  print(glue::glue('Beginning rayshading process of {site_name} DSM for {nrow(sun_pos)} timepoints at {Sys.time()}'))
 
-  for(k in 1:nrow(filtered_times)){
+  for(k in 1:nrow(sun_pos)){
     tictoc::tic()
-    timepoint <- filtered_times[k,]
+    timepoint <- sun_pos[k,]
     zenith <- timepoint$alt_deg
     azimuth <- timepoint$az_deg
 
-    print(glue::glue('Beginning rayshading for timepoint {timepoint$date_posixct} ({k}/{nrow(filtered_times)}) for {site_name}'))
+    print(glue::glue('Beginning rayshading for timepoint {timepoint$date_posixct} ({k}/{nrow(sun_pos)}) for {site_name}'))
 
     rshade= rayshader::ray_shade(
       rasM,
@@ -75,7 +80,7 @@ solar_simulator <- function(dsm_file,
     raster::writeRaster(
       ras2,
       glue::glue(
-        '{proj_dir}/output/raster/irradiance/{site_name}_{timepoint$date}-{timepoint$hour}hr-{timepoint$min}min_rayshade.tif'
+        '{proj_dir}/output/raster/irradiance/{site_name}/{site_name}_{timepoint$date}-{timepoint$hour}hr-{timepoint$min}min_rayshade.tif'
       ),
       overwrite = T
     )

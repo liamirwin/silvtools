@@ -8,14 +8,14 @@
 #' @export
 #'
 #' @examples
-#'
+#' \dontrun{
 #' detected <- lidR::locate_trees(las, algorithm = lmf(ws = 2, hmin = 10))
 #'
 #' reference <- sf::st_read('F:/Quesnel_2022/Quesnel_2022_PosTex/
 #' georeferenced_adjusted/CT1P1_postex_utm10n.shp')
 #'
 #' matched_trees <- tree_matching(reference, detected)
-#'
+#' }
 tree_matching = function(reference, detected)
 {
   stopifnot(is(detected,     "sf"))

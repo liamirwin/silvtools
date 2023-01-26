@@ -22,12 +22,12 @@ Calculates distance between ground truth and nearest 2 detected tree tops, retur
 tree ID of the ground truth and detected matches
 }
 \examples{
-
+\dontrun{
 detected <- lidR::locate_trees(las, algorithm = lmf(ws = 2, hmin = 10))
 
 reference <- sf::st_read('F:/Quesnel_2022/Quesnel_2022_PosTex/
 georeferenced_adjusted/CT1P1_postex_utm10n.shp')
 
 matched_trees <- tree_matching(reference, detected)
-
+}
 }

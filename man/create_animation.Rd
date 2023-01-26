@@ -5,16 +5,24 @@
 \title{Create Animation
 Animates solar irradiance tifs (or any images) into gif and saves locally}
 \usage{
-create_animation(proj_dir, fps = 10, label = TRUE, filetype = ".tif$")
+create_animation(
+  proj_dir,
+  fps = 10,
+  label = TRUE,
+  filetype = ".tif$",
+  sitename
+)
 }
 \arguments{
-\item{proj_dir}{Directory wher eproject is stored; expects an /output/raster/irradiance from solar_simulator, creates a /gifs output folder for saving}
+\item{proj_dir}{Directory where rasters from solar_simulator are stored (.tifs), creates a /gifs output folder for saving}
 
 \item{fps}{Chosen frames per second for final gif; change depending on number of images default is 10 fps}
 
 \item{label}{Logical; TRUE/FALSE. Determines if final animation is annotated with YYYY-MM-DD HH:MM:SS time stamp for each frame}
 
 \item{filetype}{File type of animation images; default assumes raster in .tif format}
+
+\item{sitename}{string name of site ex 'CT1P1'}
 }
 \value{
 Saves a .gif file locally
@@ -24,7 +32,8 @@ Create Animation
 Animates solar irradiance tifs (or any images) into gif and saves locally
 }
 \examples{
+\dontrun{
 proj_dir <- 'H:/Quesnel_2022/blocks/CT1-DAP'
-create_animation(proj_dir)
-
+create_animation(proj_dir, sitename = 'CT1P1')
+}
 }

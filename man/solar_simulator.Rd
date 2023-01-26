@@ -13,7 +13,7 @@ solar_simulator(dsm_file, proj_dir, site_name, aoi_file = NULL, sun_pos)
 
 \item{site_name}{Site name for file naming purposes ex 'CT1'}
 
-\item{aoi_file}{Optional area of interest for internal cropping of DSM}
+\item{aoi_file}{Optional area of interest for internal cropping of DSM either file pointing to shp/gpkg etc or loaded sf object}
 
 \item{sun_pos}{Sun position data frame from get_sun_pos, zenith, azimuth for each timepoint of interest}
 }

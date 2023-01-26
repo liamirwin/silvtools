@@ -2,6 +2,7 @@
 
 export("%>%")
 export(alphashape_metrics)
+export(calc_twi)
 export(create_animation)
 export(crown_mask)
 export(dir_setup_als)
