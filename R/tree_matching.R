@@ -18,7 +18,7 @@
 #' }
 tree_matching = function(reference, detected)
 {
-  stopifnot(is(detected,     "sf"))
+  stopifnot(is(detected, "sf"))
   stopifnot(is(reference, "sf"))
 
   plot_id <- na.omit(unique(reference$PlotID))

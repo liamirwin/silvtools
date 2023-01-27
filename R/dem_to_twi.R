@@ -17,7 +17,7 @@ calc_twi <- function(dem_file, proj_dir){
   out_dir <- paste0(proj_dir, '/output/raster/topography')
 
   if(!dir.exists(out_dir)){
-    dir.create(out_dir)
+    dir.create(out_dir, recursive = T)
   }
 
   # Median filter DEM
@@ -25,6 +25,7 @@ calc_twi <- function(dem_file, proj_dir){
   whitebox::wbt_median_filter(dem_file,
                     file.path(out_dir, paste0(tools::file_path_sans_ext(basename(dem_file)), '_median_filt.tif')))
 
+  # Generate slope raster from DEM
 
   whitebox::wbt_slope(
     file.path(out_dir, paste0(tools::file_path_sans_ext(basename(dem_file)), '_median_filt.tif')),
@@ -33,7 +34,7 @@ calc_twi <- function(dem_file, proj_dir){
     units="degrees")
 
 
-  # Remove Depressions
+  # Remove depressions (holes) in dem
 
   whitebox::wbt_breach_depressions_least_cost(
     file.path(out_dir, paste0(tools::file_path_sans_ext(basename(dem_file)), '_median_filt.tif')),
