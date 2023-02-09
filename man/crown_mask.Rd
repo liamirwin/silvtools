@@ -17,6 +17,8 @@ crown_mask(
 \arguments{
 \item{chunk}{lasCatalog chunk (catalog_apply) or las file loaded with readLAS or CHM loaded as SpatRaster}
 
+\item{ttops}{optional treetops argument, if provided lmf process is skipped}
+
 \item{chm_res}{desired resolution of chm for segmentation}
 
 \item{chm_cutoff_percent}{desired threshold of treetop height to mask crown}

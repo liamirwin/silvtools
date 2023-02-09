@@ -6,12 +6,14 @@
 Calculates distance between ground truth and nearest 2 detected tree tops, returns a matched dataset containing the
 tree ID of the ground truth and detected matches}
 \usage{
-tree_matching(reference, detected)
+tree_matching(reference, detected, PlotID)
 }
 \arguments{
 \item{reference}{sf object - points of recorded tree locations gathered in field}
 
 \item{detected}{sf object - tree top locations typically from lidR::locate_trees}
+
+\item{PlotID}{character string; ID of plot where accuracy is being assessed}
 }
 \value{
 returns a tree matching data table
