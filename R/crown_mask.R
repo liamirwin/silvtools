@@ -1,6 +1,7 @@
 #' Watershed segmentation of crowns with threshold
 #'
-#' @param chunk lasCatalog chunk (catalog_apply) or las file loaded with readLAS
+#' @param chunk lasCatalog chunk (catalog_apply) or las file loaded with readLAS or CHM loaded as SpatRaster
+#' @param ttops optional treetops argument, if provided lmf process is skipped
 #' @param chm_res desired resolution of chm for segmentation
 #' @param chm_cutoff_percent desired threshold of treetop height to mask crown
 #' @param ws local maxima finding window size
@@ -9,22 +10,34 @@
 #'
 #'
 #' @export
-crown_mask <- function(chunk, chm_res = 0.25, chm_cutoff_percent = 0.5, ws = 2, uniqueness = 'incremental', vis = FALSE){
+crown_mask <- function(chunk, ttops = NULL, chm_res = 0.25, chm_cutoff_percent = 0.5, ws = 2, uniqueness = 'incremental', vis = FALSE){
 
-  if("LAS" %in% class(las)){
+
+  if("SpatRaster" == class(chunk)){
+    chm <- chunk
+    chm_res <- terra::res(chm)[1]
+    print('Input is SpatRaster (Presuming CHM) proceeding with crown segmentation')
+  } else{
+  if("LAS" %in% class(chunk)){
     # Check if input is las instead of ctg chunk
     las <- chunk
+    print('Input is las file proceeding with crown segmentation')
   }
   else{
     # Standard chunk check for catalog apply
     las <- lidR::readLAS(chunk)
+    print('Input is catalog tile proceeding with crown segmentation')
+  }
+  if (lidR::is.empty(las)) return(NULL)
+    # Generate canopy height
+    chm <- lidR::rasterize_canopy(las, res = chm_res , lidR::p2r(na.fill = lidR::knnidw()))
   }
 
-  if (lidR::is.empty(las)) return(NULL)
-  # Generate canopy height
-  chm <- lidR::rasterize_canopy(las, res = chm_res , lidR::p2r(subcircle = 0.25, na.fill = lidR::knnidw()))
+
+  if (is.null(ttops) == TRUE){
   # Locate treetops based on defined ws
   ttops <- lidR::locate_trees(las, algorithm = lidR::lmf(ws = ws, hmin = 2), uniqueness = uniqueness)
+  }
   crowns <- silvtools::mcwatershed(chm, ttops, th_tree = 2, tree_id = 'treeID')()
   # Replace crown IDs with maximum canopy height within crown
   crowns_max <- terra::classify(x = crowns,
@@ -44,9 +57,9 @@ crown_mask <- function(chunk, chm_res = 0.25, chm_cutoff_percent = 0.5, ws = 2, 
     crowns_mask_p <- sf::st_as_sf(terra::as.polygons(crowns_masked))
     # Plotting (Optional)
     terra::plot(chm)
-    sf::plot_sf(sf::st_geometry(crowns_p), add = T, border = 'blue',lty = 2)
-    sf::plot_sf(sf::st_geometry(crowns_mask_p), add = T, border = 'red',lty = 2)
-    sf::plot_sf(sf::st_geometry(ttops), add = T)
+    plot(sf::st_geometry(crowns_p), add = T, border = 'blue',lty = 2)
+    plot(sf::st_geometry(crowns_mask_p), add = T, border = 'red',lty = 2)
+    plot(sf::st_geometry(ttops), add = T)
   }
 
   return(crowns_masked)

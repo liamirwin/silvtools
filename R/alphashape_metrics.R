@@ -13,8 +13,8 @@
 alphashape_metrics <- function(las){
   Z = las@data$Z
 
-  chm = grid_metrics(las, func = ~max(Z), res = 0.05)
-  chm_mean = pixel_metrics(las, func = ~mean(Z), res = 0.1)
+  chm = lidR::pixel_metrics(las, func = ~max(Z), res = 0.05)
+  chm_mean = lidR::pixel_metrics(las, func = ~mean(Z), res = 0.1)
   chm_mean[chm_mean < (as.numeric(terra::global(chm_mean, fun = 'max', na.rm = T)))] = NA
 
   chm_mean_trim = terra::trim(chm_mean)
@@ -25,7 +25,7 @@ alphashape_metrics <- function(las){
   a3d[,1] = a3d[,1] - mean(a3d[,1]) #center points around 0,0,0
   a3d[,2] = a3d[,2] - mean(a3d[,2]) #center points around 0,0,0
 
-  #shape = ashape3d(x = a3d, alpha = 1)
+  #shape = alphashape3d::ashape3d(x = a3d, alpha = 1)
   #plot(shape)
 
   df <- data.frame(

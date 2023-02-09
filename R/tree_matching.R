@@ -3,6 +3,7 @@
 #' tree ID of the ground truth and detected matches
 #' @param reference sf object - points of recorded tree locations gathered in field
 #' @param detected sf object - tree top locations typically from lidR::locate_trees
+#' @param PlotID character string; ID of plot where accuracy is being assessed
 #'
 #' @return returns a tree matching data table
 #' @export
@@ -16,17 +17,15 @@
 #'
 #' matched_trees <- tree_matching(reference, detected)
 #' }
-tree_matching = function(reference, detected)
+tree_matching = function(reference, detected, PlotID)
 {
   stopifnot(is(detected, "sf"))
   stopifnot(is(reference, "sf"))
 
-  plot_id <- na.omit(unique(reference$PlotID))
-
   reference <- reference %>%
     dplyr::rename(X_postex = X, Y_postex = Y) %>%
     dplyr::mutate(X = unlist(purrr::map(.$geometry,1)), Y = unlist(purrr::map(.$geometry,2)),
-           PLOTID = plot_id) %>% sf::st_drop_geometry()
+           PLOTID = PlotID) %>% sf::st_drop_geometry()
 
   detected <- detected %>%
     dplyr::mutate(X = unlist(purrr::map(.$geometry,1)), Y = unlist(purrr::map(.$geometry,2))) %>% sf::st_drop_geometry()

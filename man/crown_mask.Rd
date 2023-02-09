@@ -6,6 +6,7 @@
 \usage{
 crown_mask(
   chunk,
+  ttops = NULL,
   chm_res = 0.25,
   chm_cutoff_percent = 0.5,
   ws = 2,
@@ -14,7 +15,7 @@ crown_mask(
 )
 }
 \arguments{
-\item{chunk}{lasCatalog chunk (catalog_apply) or las file loaded with readLAS}
+\item{chunk}{lasCatalog chunk (catalog_apply) or las file loaded with readLAS or CHM loaded as SpatRaster}
 
 \item{chm_res}{desired resolution of chm for segmentation}
 
