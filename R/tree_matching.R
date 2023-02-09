@@ -17,8 +17,6 @@
 #'
 #' matched_trees <- tree_matching(reference, detected)
 #' }
-
-
 tree_matching = function(reference, detected, PlotID)
 {
   stopifnot(is(detected, "sf"))
@@ -71,7 +69,6 @@ tree_matching = function(reference, detected, PlotID)
   match_table$index_truth1 = NA_integer_
   # Set index truth to tree value
   match_table[id$V1, index_truth1 := id$index_truth1]
-  match_table_joined <- left_join(match_table, id, by = c("index_detected" = "V1"))
   # Get IDs of second closest trees
   id = match_table[, .I[which.min(distance2)], by = index_truth2]
   match_table$index_truth2 = NA_integer_
