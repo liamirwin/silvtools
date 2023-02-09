@@ -17,6 +17,8 @@
 #'
 #' matched_trees <- tree_matching(reference, detected)
 #' }
+
+
 tree_matching = function(reference, detected, PlotID)
 {
   stopifnot(is(detected, "sf"))
@@ -59,14 +61,17 @@ tree_matching = function(reference, detected, PlotID)
 
   # Takes 10% of tree height as maximum distance, if this is less than 2m make 2m
   dist_max = z_detected*0.10
-  dist_max[dist_max < 5] = 5
-  # := operator assigns the column index_truth a value of NA if distance is dist max
-  match_table[distance1 > dist_max, index_truth1 := NA]
-  match_table[distance2 > dist_max, index_truth2 := NA]
+  dist_max[dist_max < 2] = 2
+  # assign the column index_truth a value of NA if distance more than dist max
+  match_table <- match_table %>% mutate(index_truth1 = ifelse(distance1 > dist_max, NA, index_truth1),
+                                        index_truth2 = ifelse(distance2 > dist_max, NA, index_truth2))
   # Get IDs of closest trees
   id = match_table[, .I[which.min(distance1)], by = index_truth1]
+  # Set match table truth index to NA
   match_table$index_truth1 = NA_integer_
+  # Set index truth to tree value
   match_table[id$V1, index_truth1 := id$index_truth1]
+  match_table_joined <- left_join(match_table, id, by = c("index_detected" = "V1"))
   # Get IDs of second closest trees
   id = match_table[, .I[which.min(distance2)], by = index_truth2]
   match_table$index_truth2 = NA_integer_
