@@ -6,6 +6,8 @@
 \alias{silvtools-package}
 \title{silvtools: Handy Functions for Tree Level Analyses}
 \description{
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+
 This package is my first attempt and focusing on reproducible code for processing involving high density airborne lidar and other remotely datasets used in my PhD project focused on fine-scale remote sensing to inform mid-rotation silvicultural management and research.
 }
 \author{
