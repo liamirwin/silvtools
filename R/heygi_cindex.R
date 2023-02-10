@@ -19,7 +19,7 @@ heygi_cindex <- function(ttops, comp_input = 'vol_convex', maxR = 6){
   trees_ppp <- ttops %>%
     dplyr::mutate(X = X.detected, Y = Y.detected) %>%
     as.data.frame() %>%
-    dplyr::select(c(X, Y, comp_input, PLOTID))
+    dplyr::select(c(X, Y, comp_input))
 
   names(trees_ppp) <- c('X','Y','comp_value')
 
