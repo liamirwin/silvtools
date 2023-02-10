@@ -5,7 +5,7 @@
 
 <!-- badges: start -->
 
-# silvtools <img src="man/figures/logo.png" align="right" height="556" />
+# silvtools <img src="man/figures/logo.png" align="right" height="277" />
 
 <!-- badges: end -->
 
