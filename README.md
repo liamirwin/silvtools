@@ -4,6 +4,9 @@
 # silvtools
 
 <!-- badges: start -->
+
+# silvtools <img src="man/figures/logo.png" align="right" height="138" />
+
 <!-- badges: end -->
 
 The goal of silvtools is to provide a reproducible workflow for
