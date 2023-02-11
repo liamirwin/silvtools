@@ -31,9 +31,12 @@
 #'
 #' @export
 #'
-s_crowns <- convert_multi_to_single_polygons(crowns, fill_holes = T)
 convert_multi_to_single_polygons <- function(polygons, fill_holes = TRUE){
 tictoc::tic()
+if(!"MULTIPOLYGON" %in% unique(sf::st_geometry_type(polygons$geometry))){
+  print('ERROR: Input sf polygon df contained zero MUTLIPOLYGONS; conversion not neccessary')
+  stop()
+}
 # Seperate out multipolygons
 mp <- polygons %>% dplyr::filter(sf::st_geometry_type(polygons) == 'MULTIPOLYGON')
 # Seperate out polygons
@@ -73,7 +76,7 @@ for (i in 1:nrow(mp)) {
 print(glue::glue('Binding together {length(p_polygons)} cleaned polygons'))
 p_polygons <- do.call(rbind, p_polygons)
 sf::st_crs(p_polygons) <- sf::st_crs(polygons)
-if(fill_holes){
+if(fill_holes == TRUE & nrow(sp) > 0){
 # Fill holes in single polygon polygons
 sp <- nngeo::st_remove_holes(sp)
 }
