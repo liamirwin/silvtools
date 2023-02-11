@@ -31,11 +31,9 @@
 #'
 #' @export
 #'
-crowns <- st_read('C:/Users/lakirwin.stu/Downloads/crowns/ULS22_CT1_lmf_ws2_watershed_crowns.shp')
-
 s_crowns <- convert_multi_to_single_polygons(crowns, fill_holes = T)
 convert_multi_to_single_polygons <- function(polygons, fill_holes = TRUE){
-
+tictoc::tic()
 # Seperate out multipolygons
 mp <- polygons %>% dplyr::filter(sf::st_geometry_type(polygons) == 'MULTIPOLYGON')
 # Seperate out polygons
@@ -72,6 +70,7 @@ for (i in 1:nrow(mp)) {
   pb$tick()
 }
 # Bind list of corrected polygons
+print(glue::glue('Binding together {length(p_polygons)} cleaned polygons'))
 p_polygons <- do.call(rbind, p_polygons)
 sf::st_crs(p_polygons) <- sf::st_crs(polygons)
 if(fill_holes){
@@ -80,5 +79,7 @@ sp <- nngeo::st_remove_holes(sp)
 }
 # Re-join all polygons together
 polygons <- rbind(sp, p_polygons)
+print(glue::glue('Finished cleaning {nrow(polygons)} polygons'))
+tictoc::toc()
 return(polygons)
 }
