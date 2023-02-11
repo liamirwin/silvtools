@@ -30,7 +30,9 @@ alphashape_metrics <- function(las, snapshot = FALSE, image_output = NULL, acq =
   if(snapshot == TRUE){
   shape = alphashape3d::ashape3d(x = a3d, alpha = 1)
   plot(shape)
-  rgl.snapshot(filename = glue::glue("{image_output}/{acq}_{unique(las@data$treeID)}_alpha1_ashape.png"))
+  rgl::rgl.snapshot(filename = glue::glue("{image_output}/{acq}_{unique(las@data$treeID)}_alpha1_ashape.png"))
+  Sys.sleep(1)
+  rgl::rgl.close()
   }
 
   # Remove massive crown volume changes when ground points exist?
@@ -45,7 +47,9 @@ alphashape_metrics <- function(las, snapshot = FALSE, image_output = NULL, acq =
   if(snapshot == TRUE){
     shape = alphashape3d::ashape3d(x = a3d_filt, alpha = 1)
     plot(shape)
-    rgl.snapshot(filename = glue::glue("{image_output}/{acq}_{unique(las@data$treeID)}_filt_alpha1_ashape.png"))
+    rgl::rgl.snapshot(filename = glue::glue("{image_output}/{acq}_{unique(las@data$treeID)}_filt_alpha1_ashape.png"))
+    Sys.sleep(1)
+    rgl::rgl.close()
   }
 
   top_x <- las_filt %>% slice_max(Z, n = 1) %>% select(X)

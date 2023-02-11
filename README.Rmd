@@ -19,21 +19,22 @@ knitr::opts_chunk$set(
 
 # silvtools <img src="man/figures/logo.png" align="right" height="277" />
 
-
 <!-- badges: end -->
+
+## Overview
 
 The goal of silvtools is to provide a reproducible workflow for tree-level analyses of fine-scale remote sensing datasets.
 
 The package contains functions for a wide variety of tasks including segmentation, tree matching, competition index calculation, crown structural metric creation with alpha shapes, and solar simulation with rayshader
 
-## Installation
+Please note that silvtools is a relatively new package and its functions are still in the development stage. As a result, issues may be common and some functions may not yet have the level of stability and functionality desired. Despite this, silvtools builds upon the work of other excellent packages such as lidR and rayshader, and has the goal of providing a reproducible workflow for tree-level analyses of fine-scale remote sensing datasets. Nevertheless, caution should be taken when using the package's functions as they are not thoroughly tested and may have bugs or limitations that need to be addressed.
+
+## Installation :computer:
 
 You can install the development version of silvtools from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("liamirwin/silvtools")
+library(silvtools)
 ```
-
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this. You could also use GitHub Actions to re-render `README.Rmd` every time you push. An example workflow can be found here: <https://github.com/r-lib/actions/tree/v1/examples>.
-
