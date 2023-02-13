@@ -4,10 +4,10 @@
 \alias{get_alphashape_metrics}
 \title{Convert LAS file to Alphashape and compute crown metrics}
 \usage{
-get_alphashape_metrics(tree_las, prog_bar = TRUE)
+get_alphashape_metrics(chunk, prog_bar = TRUE)
 }
 \arguments{
-\item{tree_las}{an object of class LAS which has points attributed with treeID values, typically computed from lidR::segment_trees.}
+\item{chunk}{an object of class LAS or a catalog chunk which has points attributed with treeID values, typically computed from lidR::segment_trees.}
 
 \item{prog_bar}{logical. Indicates whether to display a progress bar for the computation (defaults to TRUE).}
 }
@@ -19,11 +19,12 @@ The get_alphashape_metrics function takes a tree-attributed LAS object and conve
 Crown metrics such as X, Y, Zmax, Zq999, Zq99, Z_mean, n_points, vol_convex, vol_concave, vol_a05, CV_Z, and CRR are then computed for each tree.
 }
 \examples{
+\dontrun{
 library(alphashape3d)
 library(lidR)
 las <- readLAS(system.file("extdata", "uls.laz", package = "silvtools"))
 tree_las <- segment_trees(las, mcwatershed(chm = rasterize_canopy(las, res = 1, p2r()),
 treetops = locate_trees(las, lmf(ws = 5, hmin = 5))))
 ashape_df <- get_alphashape_metrics(tree_las, prog_bar = TRUE)
-
+}
 }

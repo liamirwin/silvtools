@@ -9,13 +9,14 @@
 #' @return A data frame with columns treeID, X, Y, Zmax, Zq999, Zq99, Z_mean, n_points, vol_convex, vol_concave, vol_a05, CV_Z, CRR.
 #'
 #' @examples
+#' \dontrun{
 #' library(alphashape3d)
 #' library(lidR)
 #' las <- readLAS(system.file("extdata", "uls.laz", package = "silvtools"))
 #' tree_las <- segment_trees(las, mcwatershed(chm = rasterize_canopy(las, res = 1, p2r()),
 #' treetops = locate_trees(las, lmf(ws = 5, hmin = 5))))
 #' ashape_df <- get_alphashape_metrics(tree_las, prog_bar = TRUE)
-#'
+#' }
 #' @export
 get_alphashape_metrics <- function(chunk, prog_bar = TRUE){
 
