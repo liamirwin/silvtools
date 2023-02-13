@@ -39,3 +39,24 @@ You can install the development version of silvtools from
 devtools::install_github("liamirwin/silvtools")
 library(silvtools)
 ```
+
+## Example - Crown segmentation and metric attribution
+
+``` r
+
+las <- readLAS(system.file("extdata", "uls.laz", package = "silvtools"))
+
+tree_las <- segment_trees(las, mcwatershed(chm = rasterize_canopy(las, res = 1, p2r()),
+treetops = locate_trees(las, lmf(ws = 5, hmin = 5))))
+
+# Get alphashape metrics produces convex hulls for each treeID and generates crown volumes as well as other structural metrics
+ashape_df <- get_alphashape_metrics(tree_las, prog_bar = TRUE)
+```
+
+## Acknowledgements
+
+Thank you to extensive help and code contributions from many members of
+the UBC Integrated Remote Sensing Studio (IRSS) including but not
+limited to; Martin Queinnec, Samuel Grubinger, Rik Nuijten. See [IRSS
+LAB](https://irsslab.forestry.ubc.ca) and [IRSS
+Github](https://github.com/tgoodbody/iRss) for more.
