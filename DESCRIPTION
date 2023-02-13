@@ -18,9 +18,12 @@ Imports:
     lubridate,
     magick,
     magrittr,
+    nngeo,
+    progress,
     purrr,
     raster,
     rayshader,
+    rgl,
     SearchTrees,
     sf,
     siplab,
@@ -29,7 +32,8 @@ Imports:
     suncalc,
     terra,
     tictoc,
+    tidyselect,
     whitebox
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3

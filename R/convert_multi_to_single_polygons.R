@@ -18,22 +18,17 @@
 #' library(sf)
 #' library(nngeo)
 #'
-#' # Create example polygon data
-#' example_polygons <- st_polygon(list(
-#' rbind(c(0,0), c(0,1), c(1,1), c(1,0), c(0,0)),
-#' rbind(c(1,1), c(2,2), c(2,1), c(1,1)),
-#' rbind(c(2,2), c(2,3), c(3,3), c(3,2), c(2,2))
-#' )) %>%
-#' st_sf(crs = 4326)
+#' # Load example MULTIPOLYGON tree crown dataset
+#' multi_crowns <- st_read(system.file("extdata", "multi_crowns.gpkg", package = "silvtools"))
 #'
-#' # Apply function to example data
-#' result_polygons <- convert_multi_to_single_polygons(example_polygons, fill_holes = FALSE)
+#' # Apply function to convert example data to only largest single polygons
+#' crowns <- convert_multi_to_single_polygons(polygons = multi_crowns, fill_holes = TRUE)
 #'
 #' @export
 #'
 convert_multi_to_single_polygons <- function(polygons, fill_holes = TRUE){
 tictoc::tic()
-if(!"MULTIPOLYGON" %in% unique(sf::st_geometry_type(polygons$geometry))){
+if(!"MULTIPOLYGON" %in% unique(sf::st_geometry_type(polygons))){
   print('ERROR: Input sf polygon df contained zero MUTLIPOLYGONS; conversion not neccessary')
   stop()
 }

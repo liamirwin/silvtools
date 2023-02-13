@@ -8,8 +8,9 @@ crown_mask(
   chunk,
   ttops = NULL,
   chm_res = 0.25,
-  chm_cutoff_percent = 0.5,
+  crown_height_threshold = 0.5,
   ws = 2,
+  hmin = 2,
   uniqueness = "incremental",
   vis = FALSE
 )
@@ -21,14 +22,18 @@ crown_mask(
 
 \item{chm_res}{desired resolution of chm for segmentation}
 
-\item{chm_cutoff_percent}{desired threshold of treetop height to mask crown}
+\item{crown_height_threshold}{desired threshold of treetop height to mask crown}
 
 \item{ws}{local maxima finding window size}
+
+\item{hmin}{minimum height of local maxima to identify as treetops}
 
 \item{uniqueness}{see ?lidR::locate_trees argument defines how tree IDs are determined}
 
 \item{vis}{LOGICAL; choose whether or not to plot result (default = FALSE)}
 }
 \description{
-Watershed segmentation of crowns with threshold
+Height limited watershed segmentation; takes a las/chunk/chm and performs watershed segmentation
+if treetops are provided it will use those; function masks crowns by crown_height_threshold defined as
+percentage of treetop height; this will determine if pixels are included in final crown (eg if CHM pixel less than 50\% of tree height; exclude)
 }

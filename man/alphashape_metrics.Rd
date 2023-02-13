@@ -4,13 +4,19 @@
 \alias{alphashape_metrics}
 \title{Generate Crown Structural Metrics}
 \usage{
-alphashape_metrics(las)
+alphashape_metrics(las, snapshot = FALSE, image_output = NULL, acq = NULL)
 }
 \arguments{
 \item{las}{single tree las object}
+
+\item{snapshot}{Logical indicating whether to generate snapshots of the 3D alphashape (default: \code{FALSE})}
+
+\item{image_output}{Path to directory where the snapshots will be saved (default: \code{NULL})}
+
+\item{acq}{Identifier to include in the filename of the snapshot (default: \code{NULL})}
 }
 \value{
-returns a dataframe with 3D convex hull metrics
+returns an sf object with 3D convex hull metrics
 }
 \description{
 Generate Crown Structural Metrics
