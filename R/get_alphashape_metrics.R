@@ -21,7 +21,7 @@
 get_alphashape_metrics <- function(chunk, prog_bar = TRUE){
 
 if ("LAS" %in% class(chunk)) {
-    tree_las <- fchunkile
+    tree_las <- chunk
     print('Individual LAS object input into function')
 } else{
 tree_las <- lidR::readLAS(chunk)
