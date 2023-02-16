@@ -11,13 +11,13 @@
 #'
 #' Script intended to house R code and other code used to process input dataset
 #'
-#' input/raster, input/lidar, input/vector, and associated output folders generated
+#' input/raster, input/las, input/vector, and associated output folders generated
 #' @export
 #'
 #' @examples
 #' proj_dir <- 'D:/BC/MKRF/Mixedwoods_trial_2022'
 #' dir_setup_als(proj_dir)
-dir_setup_als <- function(proj_dir){
+setup_als_dirs <- function(proj_dir){
 
   # Generate standardized list of inputs and outputs for assoicated spatial data
   # Multilevel, /input, /output, /doc, /script
@@ -25,11 +25,12 @@ dir_setup_als <- function(proj_dir){
   # Script intended to house R code and other code used to process input dataset
 
   targ_dirs <- file.path(proj_dir, c('input','output','doc',
-                                     'script','input/lidar','input/lidar/norm','input/lidar/class','input/vector',
-                                     'input/raster', 'output/lidar',
+                                     'script','input/las','input/las/norm','input/las/class', 'input/las/tile',
+                                     'input/las/raw','input/vector',
+                                     'input/raster', 'output/las',
                                      'output/vector','output/raster',
                                      'output/vector/treetops', 'output/vector/crowns',
-                                     'output/raster/crowns'))
+                                     'output/raster/crowns', 'output/raster/dtm','output/raster/chm','output/raster/mets'))
 
   # Apply dir.create to generate standard folders
 
