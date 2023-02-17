@@ -15,39 +15,43 @@ library(geometry) # Required for rumple metrics
 # ULS or DAP?
 is_dap <- FALSE
 # Run in parallel?
-run_parallel <- TRUE
-num_cores <- 3L
+run_parallel <- T
+num_cores <- 2L
 # Tile area?
-make_tile <- TRUE
+make_tile <- F
 # Tile size (m)
-tile_size <- 500
-chunk_buf <- 50
+tile_size <- 5
+chunk_buf <- 2.5
 # Classify ground points?
-ground_classify <- TRUE
+ground_classify <- T
 # Normalize points?
-normalize <- TRUE
+normalize <- T
 # Create DSM?
-make_dsm <- TRUE
-dsm_res <- 25
+make_dsm <- T
+dsm_res <- 0.05
 # Create CHM?
 make_chm <- TRUE
-chm_res <- 0.25
+chm_res <- 0.05
 # Create DTM?
 make_dtm <- TRUE
-dtm_res <- 0.25
+dtm_res <- 0.05
 # Calculate Metrics?
-make_mets <- TRUE
+make_mets <- FALSE
 met_res <- 1
 # Is ALS?
-is_als <- TRUE
+is_als <- FALSE
 # List directories (each is one acquisiton of ULS/DAP)
-blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
+blocks_dir <- list.dirs('E:/Quesnel_2022/process', recursive = FALSE)
 # Omit these blocks from processing stream
-processed <- c('CT1','CT2','CT3','CT4','CT5')
+processed <- c('CT1','CT1-T-DAP','CT3','CT4','CT5')
 # target <- c('CT1')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 # blocks_dir <- blocks_dir[basename(blocks_dir) %in% target]
 blocks_dir <- 'D:/Silva21/AGM_2023/oak_island'
+blocks_dir <- 'E:/Quesnel_2022/god_clouds/CT1P1-MLS'
+################################################################################
+# START BUTTON
+################################################################################
 
 for(i in 1:length(blocks_dir)){
 
@@ -62,12 +66,17 @@ vector_output <- glue::glue('{proj_dir}/output/vector')
 
 
 if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
-  is_dap == TRUE
+  is_dap = TRUE
   # Set acquisition name (DAPYY_blockname)
   acq <- paste0('DAP22_', stringr::str_replace(basename(proj_dir), pattern = "-DAP", replacement = ""))
   print(paste0('Set acqusition type as DAP named ', acq))
+} else if(stringr::str_detect(basename(proj_dir), pattern = 'MLS')){
+  is_mls = TRUE
+  # Set acquisition name (DAPYY_blockname)
+  acq <- paste0('MLS22_', stringr::str_replace(basename(proj_dir), pattern = "-MLS", replacement = ""))
+  print(paste0('Set acqusition type as MLS named ', acq))
 } else{
-  is_dap == FALSE
+  is_dap = FALSE
   # Set acquisition name (ULSYY_blockname)
   acq <- paste0('ULS22_',basename(proj_dir))
   print(paste0('Set acqusition type as lidar (ULS) named ', acq))
@@ -116,6 +125,7 @@ if(make_tile == TRUE){
 if (ground_classify == TRUE) {
   tile_dir <- glue::glue('{proj_dir}/input/las/tile')
   ctg_tile <- catalog(tile_dir)
+  ctg_tile_pro <- ctg_tile$filename %in% y$filename
   # Processing options
   opt_progress(ctg_tile) <- T
   opt_laz_compression(ctg_tile) <- T
@@ -140,7 +150,18 @@ if (ground_classify == TRUE) {
       # even for non flat sites, this should be 3L in my experience
       iterations = 500L,
       time_step = 0.65))
-  } else{
+  } else if(is_mls == TRUE){
+    opt_filter(ctg_tile) = "-keep_random_fraction 0.01"
+    ctg_class <- classify_ground(ctg_tile, algorithm = csf(
+      sloop_smooth = FALSE,
+      class_threshold = 0.07,
+      # larger resolution = coarser DTM
+      cloth_resolution = .7,
+      rigidness = 2L,
+      # even for non flat sites, this should be 3L in my experience
+      iterations = 500L,
+      time_step = 0.65))
+    }else{
     ctg_class <- lidR::classify_ground(ctg_tile, csf(class_threshold = 0.25, cloth_resolution = 0.25, rigidness = 2))
   }
   print(glue::glue('Ground classification process for {acq} complete'))
