@@ -36,10 +36,10 @@ solar_simulator <- function(dsm_file,
     } else{
       aoi <- sf::st_read(aoi_file)
     }
-    dsm <- terra::rast(dsm_file) %>% terra::crop(terra::vect(aoi))
+    dsm <- terra::rast(dsm_file) %>% terra::crop(terra::vect(aoi)) %>% raster::raster(.)
     print('DSM cropped to provided area of interest')
   } else{
-    dsm <- terra::rast(dsm_file)
+    dsm <- raster::raster(dsm_file)
     print('DSM raster successfully loaded')
   }
   # Convert to matrix for rayshader

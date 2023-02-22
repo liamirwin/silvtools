@@ -13,42 +13,43 @@ library(geometry) # Required for rumple metrics
 
 # ---- Processing switches ----
 # ULS or DAP?
-is_dap <- FALSE
+is_dap <- TRUE
 # Run in parallel?
 run_parallel <- T
-num_cores <- 2L
+num_cores <- 3L
 # Tile area?
 make_tile <- F
 # Tile size (m)
 tile_size <- 5
-chunk_buf <- 2.5
+chunk_buf <- 10
 # Classify ground points?
-ground_classify <- T
+ground_classify <- F
 # Normalize points?
-normalize <- T
+normalize <- F
 # Create DSM?
-make_dsm <- T
+make_dsm <- F
 dsm_res <- 0.05
 # Create CHM?
 make_chm <- TRUE
 chm_res <- 0.05
 # Create DTM?
-make_dtm <- TRUE
+make_dtm <- F
 dtm_res <- 0.05
 # Calculate Metrics?
-make_mets <- FALSE
-met_res <- 1
+make_mets <- F
+met_res <- 0.1
 # Is ALS?
 is_als <- FALSE
+is_mls <- F
 # List directories (each is one acquisiton of ULS/DAP)
-blocks_dir <- list.dirs('E:/Quesnel_2022/process', recursive = FALSE)
+blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these blocks from processing stream
-processed <- c('CT1','CT1-T-DAP','CT3','CT4','CT5')
+processed <- c('CT1','CT2','CT3','CT4','CT5')
 # target <- c('CT1')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 # blocks_dir <- blocks_dir[basename(blocks_dir) %in% target]
 blocks_dir <- 'D:/Silva21/AGM_2023/oak_island'
-blocks_dir <- 'E:/Quesnel_2022/god_clouds/CT1P1-MLS'
+blocks_dir <- 'F:/Quesnel_2022/GeoSLAM/plot_las/CT1P2'
 ################################################################################
 # START BUTTON
 ################################################################################
@@ -125,7 +126,6 @@ if(make_tile == TRUE){
 if (ground_classify == TRUE) {
   tile_dir <- glue::glue('{proj_dir}/input/las/tile')
   ctg_tile <- catalog(tile_dir)
-  ctg_tile_pro <- ctg_tile$filename %in% y$filename
   # Processing options
   opt_progress(ctg_tile) <- T
   opt_laz_compression(ctg_tile) <- T
@@ -172,6 +172,7 @@ if(make_dtm == TRUE){
   ctg_class <- catalog(glue::glue('{proj_dir}/input/las/class'))
   opt_progress(ctg_class) <- T
   opt_chunk_buffer(ctg_class) <- chunk_buf
+  opt_stop_early(ctg_class) <- FALSE
   if (!dir.exists(glue::glue('{raster_output}/dtm'))) {
     dir.create(glue::glue('{raster_output}/dtm'), showWarnings = FALSE, recursive = T)
     print(glue::glue('Created a directory for DTM {raster_output}/dtm'))
@@ -221,24 +222,26 @@ if(normalize == TRUE){
   opt_chunk_buffer(ctg_class) <- chunk_buf
   norm_dir <- glue::glue('{proj_dir}/input/las/norm')
   opt_output_files(ctg_class) <- '{norm_dir}/{acq}_{XLEFT}_{YBOTTOM}_norm'
+  print(glue::glue('Beginnng height normalization process for {acq}'))
   # Create directory for normalized point clouds if needed
   if(!dir.exists(norm_dir)){
     dir.create(norm_dir, recursive = T)
     print(glue::glue('Created a directory for normalized laz files at {norm_dir}'))
   }
-  if(is_dap){
+  if(is_dap | is_mls){
     tile_dir <- glue::glue('{proj_dir}/input/las/tile')
     ctg_tile <- catalog(tile_dir)
     opt_progress(ctg_tile) <- T
     opt_laz_compression(ctg_tile) <- T
-    opt_chunk_buffer(ctg_tile) <- 5
+    opt_chunk_buffer(ctg_tile) <- chunk_buf
     norm_dir <- glue::glue('{proj_dir}/input/las/norm')
     opt_output_files(ctg_tile) <- '{norm_dir}/{acq}_{XLEFT}_{YBOTTOM}_norm'
     dtm <- rast(glue::glue('{raster_output}/dtm/{acq}_dtm_tin_smooth_{dtm_res}m.tif'))
     ctg_norm <- lidR::normalize_height(ctg_tile, dtm, na.rm = TRUE)
-  }
+  } else{
   # Normalize point cloud
   ctg_norm <- lidR::normalize_height(ctg_class, tin())
+  }
 }
 
 

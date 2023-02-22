@@ -13,12 +13,14 @@ library(geometry) # Required for rumple metrics
 library(lidRplugins)
 
 # List directories (each is one acquisiton of ULS/DAP)
-blocks_dir <- list.dirs('E:/Quesnel_2022/process', recursive = FALSE)
+blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these already processed blocks from processing stream
-processed <- c('CT1','CT1-T-DAP','CT3','CT4','CT5')
+processed <- c('CT1', 'CT2','CT3','CT4','CT5')
+processed <- c('CT1-T-DAP', 'CT5')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
+blocks_dir <- 'F:/Quesnel_2022/GeoSLAM/plot_las/CT1P1'
 # ULS or DAP?
-is_dap <- FALSE
+is_dap <- TRUE
 
 # ---- Treetop Loop (CHM) ----
 
@@ -50,7 +52,7 @@ for(i in 1:length(blocks_dir)){
   # ---- Find Treetops ----
 
   chm_files <- list.files(glue::glue('{proj_dir}/output/raster/chm'), pattern = '.tif$', full.names = T)
-  chm <- terra::rast(str_subset(chm_files, pattern = 'smooth'))
+  chm <- terra::rast(stringr::str_subset(chm_files, pattern = 'smooth'))
   # Fixed window size (2m)
   lmf_ws2 <- locate_trees(chm, lmf(ws = 2, hmin = 5), uniqueness = 'incremental')
   # Lmf auto
@@ -64,9 +66,9 @@ for(i in 1:length(blocks_dir)){
     print(glue::glue('Created tree top output directory for {acq}'))
   }
 
-  sf::st_write(lmf_ws2, glue::glue('{vector_output}/treetops/{acq}_lmf_ws2_ttops.gpkg'))
-  sf::st_write(lmf_auto, glue::glue('{vector_output}/treetops/{acq}_lmf_auto_ttops.gpkg'))
-  sf::st_write(lmf_v, glue::glue('{vector_output}/treetops/{acq}_lmf_v_ttops.gpkg'))
+  sf::st_write(lmf_ws2, glue::glue('{vector_output}/treetops/{acq}_lmf_ws2_ttops.gpkg'), append = FALSE)
+  sf::st_write(lmf_auto, glue::glue('{vector_output}/treetops/{acq}_lmf_auto_ttops.gpkg'), append = FALSE)
+  sf::st_write(lmf_v, glue::glue('{vector_output}/treetops/{acq}_lmf_v_ttops.gpkg'), append = FALSE)
 
   print(glue::glue('Found {nrow(lmf_ws2)} ws2 treetops, {nrow(lmf_auto)} auto treetops, and {nrow(lmf_v)} variable ws treetops in {acq}'))
   tictoc::toc()
@@ -148,7 +150,7 @@ crowns_auto_p <- sf::st_as_sf(terra::as.polygons(crowns_auto)) %>%
 print('Cleaning lmfv( ) crowns...')
 # lmfv()
 crowns_v_p <- sf::st_as_sf(terra::as.polygons(crowns_v)) %>%
-  convert_multi_to_single_polygons(polygons = ., fill_holes = TRUE)s
+  convert_multi_to_single_polygons(polygons = ., fill_holes = TRUE)
 
 dir.create(glue::glue('{vector_output}/crowns'), showWarnings = FALSE, recursive = T)
 dir.create(glue::glue('{raster_output}/crowns'), showWarnings = FALSE, recursive = T)
