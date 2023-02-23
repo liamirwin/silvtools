@@ -39,7 +39,6 @@ pb <- progress::progress_bar$new(
 }
 
 print(glue::glue('Beginning crown metric generation for chunk'))
-
 tree_las <- filter_duplicates(tree_las)
 
 obs <- tree_las@data %>%
