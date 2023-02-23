@@ -26,18 +26,13 @@ raster_output <- glue::glue('{proj_dir}/output/raster')
 vector_output <- glue::glue('{proj_dir}/output/vector')
 image_output <- glue::glue('{proj_dir}/output/png/ashape_snapshots')
 
-tree_las_list <- list.files('H:/Quesnel_2022/process/CT1/output/tree_las', pattern = '.laz', full.names = T)
+tree_las_list <- list.files(glue::glue('{proj_dir}/input/tree_las'), pattern = '.laz', full.names = T)
 ashape_mets <- list()
 
 if(!dir.exists(glue::glue('{proj_dir}/output/crowns/ashapes'))){
   dir.create(glue::glue('{proj_dir}/output/crowns/ashapes'), recursive = T)
   print(glue::glue('Created alphashape save directory for {acq}'))
 }
-
-
-
-
-
 
 for(i in 1:length(tree_las_list)){
   tictoc::tic()
@@ -61,8 +56,6 @@ square_grid <- st_make_grid(ashape_sf, cellsize = 10, square = TRUE)
 
 # Create a hexagonal grid with 100m2 cells
 hex_grid <- st_make_grid(st_as_sfc(st_bbox(ashape_sf)), cellsize = 10, square = FALSE)
-
-
 
 bdy <- st_read(list.files(glue::glue('{proj_dir}/input/vector/'), pattern = '.gpkg', full.names = T))
 a <- sf::st_intersection(square_grid, bdy)
