@@ -20,11 +20,13 @@
 apply_treeid_to_las <- function(chunk, crowns){
   tictoc::tic()
   las <- readLAS(chunk)
-  box <- chunk@data
+  box <- st_as_sfc(st_bbox(chunk))
   if (is.empty(las)) return(NULL)
+  # if (!'treeID' %in% names(las@data)) return(NULL)
   box_buf <- st_buffer(box, dist = 5)
   # Select crowns relevant to chunk of interest
   chunk_crowns <- crowns[sf::st_intersects(crowns, box_buf, sparse = FALSE),]
+  if(nrow(chunk_crowns) == 0) return(NULL)
   if("Z" %in% names(chunk_crowns)){
   names(chunk_crowns) <- c('treeID','geometry')
   }
@@ -33,6 +35,7 @@ apply_treeid_to_las <- function(chunk, crowns){
   tree_las = add_lasattribute(tree_las, name="treeID", desc="ID of a tree")
   glue::glue('Merged {nrow(chunk_crowns)} crowns with {length(las@data$Z)} points in chunk')
   tictoc::toc()
+  return(tree_las)
 }
 library(future)
 
@@ -60,13 +63,17 @@ if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
 
 
 ctg <- catalog(glue::glue('{proj_dir}/input/las/norm'))
-crowns <- st_read(glue::glue('{proj_dir}/input/las/norm/{acq}_lmf_ws2_watershed_crowns.shp'))
+crowns <- st_read(glue::glue('{proj_dir}/output/vector/crowns/{acq}_lmf_ws2_watershed_crowns.shp'))
 if(!dir.exists(glue::glue('{proj_dir}/output/tree_las'))){
   dir.create(glue::glue('{proj_dir}/output/tree_las'))
-  glue::glue('Created tree las directory at {proj_dir}/output/tree_las'))
+  glue::glue('Created tree las directory at {proj_dir}/output/tree_las')
 }
 
-opt_output_files(ctg) <- glue::glue("{proj_dir}/output/tree_las/{*}_treeid")
+opt_output_files(ctg) <- "{proj_dir}/output/tree_las/{*}_treeid"
+opt_stop_early(ctg) <- F
+opt_progress(ctg) <- T
+opt_laz_compression(ctg) <- T
+opt_chunk_buffer(ctg) <- 25
 plan(multisession, workers = 3L)
 tree_ctg <- catalog_apply(ctg, apply_treeid_to_las, crowns = crowns)
 
