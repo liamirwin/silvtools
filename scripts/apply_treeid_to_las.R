@@ -114,7 +114,12 @@ for(i in 1:length(tree_las_list)){
 # Clean duplicate alphashapes by filtering same tree ID and taking tree with greater n_points
 
 
-
+library(glue)
+library(lidR)
+library(future.apply)
+library(future)
+library(sf)
+library(silvtools)
 # List directories (each is one acquisiton of ULS/DAP)
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these already processed blocks from processing stream
