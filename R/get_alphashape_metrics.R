@@ -39,13 +39,13 @@ pb <- progress::progress_bar$new(
 }
 
 print(glue::glue('Beginning crown metric generation for chunk'))
-tree_las <- filter_duplicates(tree_las)
+tree_las <- lidR::filter_duplicates(tree_las)
 
 obs <- tree_las@data %>%
   dplyr::filter(!is.na(treeID)) %>%
   dplyr::select(X,Y,Z,treeID) %>%
   dplyr::group_by(treeID) %>%
-  summarise(n = n()) %>% dplyr::ungroup() %>% dplyr::filter(n <= 4)
+  dplyr::summarise(n = n()) %>% dplyr::ungroup() %>% dplyr::filter(n <= 4)
 
 if(nrow(obs) > 0){
 print(glue::glue('{nrow(obs)} treeIDs had 4 or fewer points and were discarded'))
