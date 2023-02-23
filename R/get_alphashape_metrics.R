@@ -45,7 +45,7 @@ obs <- tree_las@data %>%
   dplyr::filter(!is.na(treeID)) %>%
   dplyr::select(X,Y,Z,treeID) %>%
   dplyr::group_by(treeID) %>%
-  dplyr::summarise(n = n()) %>% dplyr::ungroup() %>% dplyr::filter(n <= 4)
+  dplyr::summarise(n = dplyr::n()) %>% dplyr::ungroup() %>% dplyr::filter(n <= 4)
 
 if(nrow(obs) > 0){
 print(glue::glue('{nrow(obs)} treeIDs had 4 or fewer points and were discarded'))

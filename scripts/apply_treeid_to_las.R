@@ -120,6 +120,7 @@ library(future.apply)
 library(future)
 library(sf)
 library(silvtools)
+library(dplyr)
 # List directories (each is one acquisiton of ULS/DAP)
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these already processed blocks from processing stream
@@ -149,18 +150,24 @@ if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
 generate_alphashape <- function(proj_dir, acq, num_cores = 1) {
   # Generate Alphashapes
 
+  # Define output directories
   raster_output <- glue::glue('{proj_dir}/output/raster')
   vector_output <- glue::glue('{proj_dir}/output/vector')
   image_output <- glue::glue('{proj_dir}/output/png/ashape_snapshots')
 
+  # Get a list of all .laz files in the input directory
   tree_las_list <- list.files(glue::glue('{proj_dir}/output/tree_las'), pattern = '.laz', full.names = T)
+
+  # Initialize a list to store alphashape metrics
   ashape_mets <- list()
 
+  # Check if the output directory for alphashapes exists, and create it if it doesn't
   if(!dir.exists(glue::glue('{proj_dir}/output/crowns/ashapes'))){
     dir.create(glue::glue('{proj_dir}/output/crowns/ashapes'), recursive = T)
     print(glue::glue('Created alphashape save directory for {acq}'))
   }
 
+  # Define a function to get alphashape metrics for a single LAS file
   get_alphashape_metrics_fun <- function(las_filename) {
     las <- readLAS(las_filename, filter = "-thin_with_voxel 0.05")
     ashape_metrics <- get_alphashape_metrics(las)
@@ -170,7 +177,8 @@ generate_alphashape <- function(proj_dir, acq, num_cores = 1) {
       append = F)
     return(ashape_metrics)
   }
-
+  print(glue::glue('Beginning parallel processing for {acq}'))
+  # Use future_lapply to process the LAS files in parallel if more than one core is specified
   if(num_cores > 1){
     library(future.apply)
     plan(multisession, workers = num_cores)
@@ -178,21 +186,24 @@ generate_alphashape <- function(proj_dir, acq, num_cores = 1) {
     results <- future_lapply(tree_las_list, get_alphashape_metrics_fun)
 
   } else {
+    # Otherwise, use lapply to process the LAS files sequentially
     results <- lapply(tree_las_list, get_alphashape_metrics_fun)
   }
 
-  # Print the time it took to process each chunk
-  print_time <- function(start_time, end_time, i) {
-    print(glue::glue('Processed chunk {i} in {tictoc::toc() - tictoc::tic()} seconds'))
+  # Define a function to print progress updates
+  print_progress <- function(i, num_files) {
+    message(glue::glue('Processed {i} out of {num_files} files.'))
   }
 
+  # Loop through the results and print progress updates
   for(i in seq_along(results)) {
-    # Print the time it took to process each chunk
-    print_time(tictoc::tic(), tictoc::toc(), i)
+    print_progress(i, length(results))
   }
 
+  # Return NULL invisibly
   return(invisible(NULL))
 }
+
 
 
 generate_alphashape(proj_dir, acq, num_cores = 3L)
