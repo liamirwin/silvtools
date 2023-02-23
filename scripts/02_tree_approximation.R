@@ -15,12 +15,11 @@ library(lidRplugins)
 # List directories (each is one acquisiton of ULS/DAP)
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these already processed blocks from processing stream
-processed <- c('CT1', 'CT2','CT3','CT4','CT5')
-processed <- c('CT1-T-DAP', 'CT5')
+processed <- c('CT2','CT3','CT4','CT5','CT1-T-DAP')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 blocks_dir <- 'F:/Quesnel_2022/GeoSLAM/plot_las/CT1P1'
 # ULS or DAP?
-is_dap <- TRUE
+is_dap <- FALSE
 
 # ---- Treetop Loop (CHM) ----
 
