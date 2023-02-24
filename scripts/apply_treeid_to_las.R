@@ -42,10 +42,10 @@ library(future)
 # List directories (each is one acquisiton of ULS/DAP)
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these already processed blocks from processing stream
-processed <- c('CT2','CT3','CT4','CT5','CT1-T-DAP')
+processed <- c('CT1','CT2','CT3','CT4','CT5')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 i = 1
-is_dap <- FALSE
+is_dap <- TRUE
 
 proj_dir <- blocks_dir[i]
 
@@ -173,11 +173,12 @@ generate_alphashape <- function(proj_dir, acq, num_cores = 1) {
     ashape_metrics <- get_alphashape_metrics(las)
     readr::write_csv(
       ashape_metrics,
-      file = glue::glue('{proj_dir}/output/crowns/ashapes/{acq}_chunk_5cmvoxel_{i}_ashapes.csv'),
-      append = F)
+      file = glue::glue('{proj_dir}/output/crowns/ashapes/{acq}_chunk_5cmvoxel_ashapes.csv'),
+      append = T,
+      col_names = T)
     return(ashape_metrics)
   }
-  print(glue::glue('Beginning parallel processing for {acq}'))
+  print(glue::glue('Beginning parallel processing for {acq} Alphashapes at {Sys.time()}'))
   # Use future_lapply to process the LAS files in parallel if more than one core is specified
   if(num_cores > 1){
     library(future.apply)
@@ -233,14 +234,18 @@ generate_alphashapes <- function(proj_dir, acq) {
     ashape_metrics <- get_alphashape_metrics(las)
     # Write alphashape
     readr::write_csv(ashape_metrics,
-                     file = glue::glue('{proj_dir}/output/crowns/ashapes/{acq}_chunk_5cmvoxel_{i}_ashapes.csv'),
-                     append = F)
+                     file = glue::glue('{proj_dir}/output/crowns/ashapes/{acq}_chunk_5cmvoxel_ashapes.csv'),
+                     append = T)
     print(glue::glue('Done processing {las_file}'))
     return(ashape_metrics)
   }
 
+
+
   # Apply generate_alphashape function to each input file
   ashape_mets <- lapply(tree_las_list, generate_alphashape)
+
+
 
   return(ashape_mets)
 }
