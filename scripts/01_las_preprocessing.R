@@ -13,33 +13,33 @@ library(geometry) # Required for rumple metrics
 
 # ---- Processing switches ----
 # ULS or DAP?
-is_dap <- TRUE
+is_dap <- FALSE
 # Run in parallel?
 run_parallel <- T
-num_cores <- 3L
+num_cores <- 4L
 # Tile area?
-make_tile <- F
+make_tile <- T
 # Tile size (m)
-tile_size <- 5
+tile_size <- 250
 chunk_buf <- 10
 # Classify ground points?
-ground_classify <- F
+ground_classify <- T
 # Normalize points?
-normalize <- F
+normalize <- T
 # Create DSM?
-make_dsm <- F
-dsm_res <- 0.05
+make_dsm <- T
+dsm_res <- 0.10
 # Create CHM?
 make_chm <- TRUE
-chm_res <- 0.05
+chm_res <- 0.10
 # Create DTM?
-make_dtm <- F
-dtm_res <- 0.05
+make_dtm <- T
+dtm_res <- 0.10
 # Calculate Metrics?
-make_mets <- F
-met_res <- 0.1
+make_mets <- T
+met_res <- 1
 # Is ALS?
-is_als <- FALSE
+is_als <- F
 is_mls <- F
 # List directories (each is one acquisiton of ULS/DAP)
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
@@ -50,6 +50,9 @@ blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 # blocks_dir <- blocks_dir[basename(blocks_dir) %in% target]
 blocks_dir <- 'D:/Silva21/AGM_2023/oak_island'
 blocks_dir <- 'F:/Quesnel_2022/GeoSLAM/plot_las/CT1P2'
+blocks_dir <- 'D:/riccarton_bush'
+blocks_dir <- 'Y:/Irwin/NZ_2023/Campbell/Campbell_ULS'
+blocks_dir <- 'H:/Cass_ULS'
 ################################################################################
 # START BUTTON
 ################################################################################
@@ -79,11 +82,12 @@ if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
 } else{
   is_dap = FALSE
   # Set acquisition name (ULSYY_blockname)
-  acq <- paste0('ULS22_',basename(proj_dir))
+  acq <- paste0('ULS23_',basename(proj_dir))
   print(paste0('Set acqusition type as lidar (ULS) named ', acq))
 }
 if(is_als){
   acq <- paste0('ALS_', stringr::str_replace(basename(proj_dir), pattern = "-DAP", replacement = ""))
+  print(paste0('Set acqusition type as lidar (ALS) named ', acq))
 }
 
 # ---- Initialize Parallel Processing ----
@@ -108,7 +112,7 @@ if(make_tile == TRUE){
   opt_laz_compression(ctg_tile) <- T
   tile_dir <- glue::glue('{proj_dir}/input/las/tile')
   opt_output_files(ctg_tile) <- '{tile_dir}/{acq}_{XLEFT}_{YBOTTOM}'
-
+  ctg_tile@output_options$drivers$LAS$param = list(index = TRUE)
   # Create directory for tiles if needed
   if(!dir.exists(tile_dir)){
     dir.create(tile_dir, recursive = T)
@@ -220,6 +224,7 @@ if(normalize == TRUE){
   opt_progress(ctg_class) <- T
   opt_laz_compression(ctg_class) <- T
   opt_chunk_buffer(ctg_class) <- chunk_buf
+  opt_filter(ctg_class) <- '-drop_as_witheld'
   norm_dir <- glue::glue('{proj_dir}/input/las/norm')
   opt_output_files(ctg_class) <- '{norm_dir}/{acq}_{XLEFT}_{YBOTTOM}_norm'
   print(glue::glue('Beginnng height normalization process for {acq}'))

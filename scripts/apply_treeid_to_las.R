@@ -39,18 +39,27 @@ apply_treeid_to_las <- function(chunk, crowns){
 }
 library(future)
 
+library(glue)
+library(lidR)
+library(future.apply)
+library(future)
+library(sf)
+library(silvtools)
+library(dplyr)
 # List directories (each is one acquisiton of ULS/DAP)
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these already processed blocks from processing stream
-processed <- c('CT1','CT2','CT3','CT4','CT5')
+processed <- c('CT1','CT5')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
-i = 1
+blocks_dir <- c("H:/Quesnel_2022/process/CT1-T-DAP")
 is_dap <- TRUE
+
+for(i in 1:length(blocks_dir)){
 
 proj_dir <- blocks_dir[i]
 
 if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
-  is_dap == TRUE
+  is_dap = TRUE
   # Set acquisition name (DAPYY_blockname)
   acq <- glue::glue('DAP22_{stringr::str_replace(basename(proj_dir), pattern = "-DAP", replacement = "")}')
   print(glue::glue('Set acqusition type as DAP named {acq}'))
@@ -64,6 +73,7 @@ if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
 
 ctg <- catalog(glue::glue('{proj_dir}/input/las/norm'))
 crowns <- st_read(glue::glue('{proj_dir}/output/vector/crowns/{acq}_lmf_ws2_watershed_crowns.shp'))
+
 if(!dir.exists(glue::glue('{proj_dir}/output/tree_las'))){
   dir.create(glue::glue('{proj_dir}/output/tree_las'))
   glue::glue('Created tree las directory at {proj_dir}/output/tree_las')
@@ -73,61 +83,25 @@ opt_output_files(ctg) <- "{proj_dir}/output/tree_las/{*}_treeid"
 opt_stop_early(ctg) <- F
 opt_progress(ctg) <- T
 opt_laz_compression(ctg) <- T
-opt_chunk_buffer(ctg) <- 25
+opt_chunk_buffer(ctg) <- 5
+opt_filter(ctg) <- "-thin_with_voxel 0.05"
 plan(multisession, workers = 3L)
+plan(sequential)
 tree_ctg <- catalog_apply(ctg, apply_treeid_to_las, crowns = crowns)
-
-# Generate Alphashapes
-
-# Define paths to output directories
-raster_output <- glue::glue('{proj_dir}/output/raster') # where raster files will be saved
-vector_output <- glue::glue('{proj_dir}/output/vector') # where vector files will be saved
-image_output <- glue::glue('{proj_dir}/output/png/ashape_snapshots') # where images will be saved
-
-# Get a list of input files
-tree_las_list <- list.files(glue::glue('{proj_dir}/input/tree_las'), pattern = '.laz', full.names = T)
-
-# Initialize a list to store alphashape metrics for each file
-ashape_mets <- list()
-
-# Check if output directory for alphashapes exists, create it if it doesn't
-if(!dir.exists(glue::glue('{proj_dir}/output/crowns/ashapes'))){
-  dir.create(glue::glue('{proj_dir}/output/crowns/ashapes'), recursive = T)
-  print(glue::glue('Created alphashape save directory for {acq}'))
+print(glue::glue('Finished applying tree ids for {acq}, beginning alphashape computation at {Sys.time()}'))
+generate_alphashape(proj_dir, acq, num_cores = 3L)
+print(glue::glue('Finished applying tree ids for {acq}, beginning alphashape computation at {Sys.time()}'))
 }
-
-# Loop through each input file
-for(i in 1:length(tree_las_list)){
-  tictoc::tic() # start a timer
-  las <- readLAS(tree_las_list[i], filter = "-thin_with_voxel 0.05") # read in the las file
-  print(glue::glue('Loaded las {i} of {length(tree_las_list)}'))
-  ashape_mets[[i]] <- get_alphashape_metrics(las) # calculate alphashape metrics
-  # Write alphashape metrics to a CSV file
-  readr::write_csv(ashape_mets[[i]],
-                   file = glue::glue('{proj_dir}/output/crowns/ashapes/{acq}_chunk_5cmvoxel_{i}_ashapes.csv'),
-                   append = F)
-  print(glue::glue('Done processing for chunk {i}'))
-  tictoc::toc() # end the timer
-}
-
 
 # Clean duplicate alphashapes by filtering same tree ID and taking tree with greater n_points
 
-
-library(glue)
-library(lidR)
-library(future.apply)
-library(future)
-library(sf)
-library(silvtools)
-library(dplyr)
 # List directories (each is one acquisiton of ULS/DAP)
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these already processed blocks from processing stream
-processed <- c('CT2','CT3','CT4','CT5','CT1-T-DAP')
+processed <- c('CT1','CT2','CT3','CT4','CT5')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 i = 1
-is_dap <- FALSE
+is_dap <- TRUE
 
 proj_dir <- blocks_dir[i]
 
@@ -207,7 +181,7 @@ generate_alphashape <- function(proj_dir, acq, num_cores = 1) {
 
 
 
-generate_alphashape(proj_dir, acq, num_cores = 3L)
+generate_alphashape(proj_dir, acq, num_cores = 4L)
 
 
 # NON PARRALEL FUNCTION

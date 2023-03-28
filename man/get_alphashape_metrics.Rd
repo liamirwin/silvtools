@@ -23,7 +23,7 @@ Crown metrics such as X, Y, Zmax, Zq999, Zq99, Z_mean, n_points, vol_convex, vol
 library(alphashape3d)
 library(lidR)
 las <- readLAS(system.file("extdata", "uls.laz", package = "silvtools"))
-tree_las <- segment_trees(las, mcwatershed(chm = rasterize_canopy(las, res = 1, p2r()),
+tree_las <- segment_trees(las, dalponte2016(chm = rasterize_canopy(las, res = 1, p2r()),
 treetops = locate_trees(las, lmf(ws = 5, hmin = 5))))
 ashape_df <- get_alphashape_metrics(tree_las, prog_bar = TRUE)
 }

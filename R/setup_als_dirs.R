@@ -1,22 +1,19 @@
-#' Setup ALS Directories
+#' Setup standard directories for an LAS project
 #'
-#' @param proj_dir Main directory for processing or site
+#' This function creates a set of standardized directories for managing and organizing
+#' Airborne LiDAR (ALS) or other LAS data and associated spatial data, including input, output,
+#' documentation, and script folders.
 #'
-#' @return Generate standardized folders for inputs and outputs
-#' associated with ALS data
+#' @param proj_dir A character string representing the path to the root directory of the ALS project.
 #'
-#' Multilevel, /input, /output, /doc, /script
-#'
-#' Doc intended to store relevant literature, site info, data collection info
-#'
-#' Script intended to house R code and other code used to process input dataset
-#'
-#' input/raster, input/las, input/vector, and associated output folders generated
-#' @export
+#' @return A list of created directories, invisibly.
 #'
 #' @examples
-#' proj_dir <- 'D:/BC/MKRF/Mixedwoods_trial_2022'
-#' dir_setup_als(proj_dir)
+#' # Set up directories for an example ALS project
+#' proj_path <- "path/to/your/project"
+#' setup_als_dirs(proj_path)
+#'
+#' @export
 setup_als_dirs <- function(proj_dir){
 
   # Generate standardized list of inputs and outputs for assoicated spatial data
@@ -27,10 +24,10 @@ setup_als_dirs <- function(proj_dir){
   targ_dirs <- file.path(proj_dir, c('input','output','doc',
                                      'script','input/las','input/las/norm','input/las/class', 'input/las/tile',
                                      'input/las/raw','input/vector',
-                                     'input/raster', 'output/las',
+                                     'input/raster',
                                      'output/vector','output/raster',
                                      'output/vector/treetops', 'output/vector/crowns',
-                                     'output/raster/crowns', 'output/raster/dtm','output/raster/chm','output/raster/mets'))
+                                     'output/raster/crowns', 'output/raster/dtm','output/raster/chm','output/raster/metrics'))
 
   # Apply dir.create to generate standard folders
 

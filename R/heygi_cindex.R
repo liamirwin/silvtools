@@ -17,7 +17,7 @@ heygi_cindex <- function(ttops, comp_input = 'vol_convex', maxR = 6){
 
   # Convert ttops to ppp object
   trees_ppp <- ttops %>%
-    dplyr::mutate(X = X.detected, Y = Y.detected) %>%
+    dplyr::mutate(X = X, Y = Y) %>%
     as.data.frame() %>%
     dplyr::select(c(X, Y, comp_input))
 
@@ -39,9 +39,9 @@ heygi_cindex <- function(ttops, comp_input = 'vol_convex', maxR = 6){
   # Join new cindex with original ttops
 
   trees_cindex <- heygi %>%
-    as.data.frame() %>% dplyr::select(x, y, cindex) %>% sf::st_as_sf(coords = c('x', 'y'))
+    as.data.frame() %>% dplyr::select(x, y, cindex) %>% sf::st_as_sf(coords = c('x', 'y'), crs = st_crs(ttops))
 
-  ttops <- ttops %>% sf::st_as_sf(coords = c('X.detected', 'Y.detected'))
+  ttops <- ttops %>% sf::st_as_sf(coords = c('X', 'Y'))
 
   trees_cindex <- trees_cindex %>%
     sf::st_join(., ttops)
