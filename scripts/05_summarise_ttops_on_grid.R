@@ -31,19 +31,46 @@ if(is.null(acq)){
 }
 
 # Read Alphashape tree tops
-x <- read.table(glue::glue('{proj_dir}/output/crowns/ashapes/{acq}_chunk_5cmvoxel_ashapes.csv'), header = TRUE, sep = ",")
+ashapes <- read.table(glue::glue('{proj_dir}/output/crowns/ashapes/{acq}_chunk_5cmvoxel_ashapes.csv'), header = TRUE, sep = ",")
+
 # Clean up treetops
-ttops <- x %>% filter(!x$treeID %in% names(x)) %>% st_as_sf(coords = c('X','Y'), crs = 26910, remove = FALSE) %>% mutate_if(is.character, as.numeric) %>%
+ttops <- ashapes %>% filter(!ashapes$treeID %in% names(ashapes)) %>% st_as_sf(coords = c('X','Y'), crs = 26910, remove = FALSE) %>% mutate_if(is.character, as.numeric) %>%
   mutate(treeID = as.integer(treeID), point_id = row_number()) %>% group_by(treeID) %>%
-  filter(n_points == max(n_points)) %>% filter(row_number() == 1)
+  filter(n_points == max(n_points)) %>% filter(row_number() == 1) %>% ungroup()
+
+# Adjust Volume Outliers based on quantiles
+# Load the necessary libraries
+library(dplyr)
+
+# Assuming your dataset is in a data frame called `tree_data`
+# Set the desired percentiles
+lower_percentile <- 0.02  # 1st percentile
+upper_percentile <- 0.98  # 99th percentile
+
+# Calculate the percentile-based cutoffs
+vol_concave_cutoffs <- quantile(ttops$vol_concave, c(lower_percentile, upper_percentile))
+vol_convex_cutoffs <- quantile(ttops$vol_convex, c(lower_percentile, upper_percentile))
+n_points_cutoffs <- quantile(ttops$n_points, c(lower_percentile, upper_percentile))
+
+
+# Visualize potential outliers
+
+# Replace values outside the cutoffs with the cutoff values
+tree_data_adjusted <- ttops %>%
+  mutate(vol_concave = ifelse(vol_concave < vol_concave_cutoffs[1], vol_concave_cutoffs[1],
+                              ifelse(vol_concave > vol_concave_cutoffs[2], vol_concave_cutoffs[2], vol_concave)),
+         vol_convex = ifelse(vol_convex < vol_convex_cutoffs[1], vol_convex_cutoffs[1],
+                             ifelse(vol_convex > vol_convex_cutoffs[2], vol_convex_cutoffs[2], vol_convex)),
+         n_points = ifelse(n_points < n_points_cutoffs[1], n_points_cutoffs[1],
+                           ifelse(n_points > n_points_cutoffs[2], n_points_cutoff)))
+
+
+
 # Calculate Heygi index for each tree
 print(glue::glue('Calculating Heygi index for {nrow(ttops)} tree tops'))
 ttops <- silvtools::heygi_cindex(ttops, comp_input = 'vol_concave', maxR = 6)
 
 ttops <- ttops %>% mutate(cindex = ifelse(cindex > 40, 40, cindex)) %>% mutate(vol_concave = ifelse(vol_concave > 1000, 1000, vol_concave))
-
-
-
 
 # Apply linear bai models
 
