@@ -2,6 +2,7 @@
 
 library(sf)
 library(tidyverse)
+library(gridExtra)
 # List directories (each is one acquisiton of ULS/DAP)
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these already processed blocks from processing stream
@@ -13,6 +14,8 @@ i = 1
 # ---- Project setup ----
 acq = NULL
 proj_dir <- blocks_dir[i]
+
+# Clamp outliers and Convert Alphashape Attributed Treetops to Summary Grid for BAI and Competition
 
 ttops_to_grid <- function(proj_dir, cellsize = 10, square = TRUE, acq = NULL){
 
@@ -38,95 +41,151 @@ ttops <- ashapes %>% filter(!ashapes$treeID %in% names(ashapes)) %>% st_as_sf(co
   mutate(treeID = as.integer(treeID), point_id = row_number()) %>% group_by(treeID) %>%
   filter(n_points == max(n_points)) %>% filter(row_number() == 1) %>% ungroup()
 
-# Adjust Volume Outliers based on quantiles
-# Load the necessary libraries
-library(dplyr)
+# Adjust Outliers based on quantiles
+# Set the desired metrics to cap
+metrics <- c('vol_concave','vol_convex')
 
-# Assuming your dataset is in a data frame called `tree_data`
-# Set the desired percentiles
-lower_percentile <- 0.02  # 1st percentile
-upper_percentile <- 0.98  # 99th percentile
+# Replace XX with your chosen percentile (e.g., 95, 99, etc.)
+upper_cutoff_percentile <- 99.5
+lower_cutoff_percentile <- 0.5
 
-# Calculate the percentile-based cutoffs
-vol_concave_cutoffs <- quantile(ttops$vol_concave, c(lower_percentile, upper_percentile))
-vol_convex_cutoffs <- quantile(ttops$vol_convex, c(lower_percentile, upper_percentile))
-n_points_cutoffs <- quantile(ttops$n_points, c(lower_percentile, upper_percentile))
+# Function to cap outliers based on chosen quantile
+cap_outliers <- function(data, metric,  upper_cutoff_percentile, lower_cutoff_percentile) {
+  # Calculate the upper and lower cutoff values based on the percentiles
+  upper_cutoff_value <- quantile(data[[metric]], upper_cutoff_percentile / 100)
+  lower_cutoff_value <- quantile(data[[metric]], lower_cutoff_percentile / 100)
 
+  # Cap the values using the cutoff values
+  capped_data <- data %>%
+    mutate(across({{metric}}, ~ifelse(. > upper_cutoff_value, upper_cutoff_value, .), .names = "{col}")) %>%
+    mutate(across({{metric}}, ~ifelse(. < lower_cutoff_value, lower_cutoff_value, .), .names = "{col}"))
 
-# Visualize potential outliers
+  # Count the number of outliers
+  num_up_outliers <- sum(data[[metric]] > upper_cutoff_value)
+  num_low_outliers <- sum(data[[metric]] < lower_cutoff_value)
 
-# Replace values outside the cutoffs with the cutoff values
-tree_data_adjusted <- ttops %>%
-  mutate(vol_concave = ifelse(vol_concave < vol_concave_cutoffs[1], vol_concave_cutoffs[1],
-                              ifelse(vol_concave > vol_concave_cutoffs[2], vol_concave_cutoffs[2], vol_concave)),
-         vol_convex = ifelse(vol_convex < vol_convex_cutoffs[1], vol_convex_cutoffs[1],
-                             ifelse(vol_convex > vol_convex_cutoffs[2], vol_convex_cutoffs[2], vol_convex)),
-         n_points = ifelse(n_points < n_points_cutoffs[1], n_points_cutoffs[1],
-                           ifelse(n_points > n_points_cutoffs[2], n_points_cutoff)))
+  # Print the number of capped values
+  print(glue::glue("For {metric}, there were {num_up_outliers} rows above the upper cap value, and their values have been altered,
+       there were {num_low_outliers} rows below the lower cap value, and their values have been altered,
+       in total {num_up_outliers + num_low_outliers} trees had their values capped."))
 
+  # Create pre-outlier and post-outlier capping histograms
+  p1 <- plot_outlier_distribution(data, metric, percentiles = c(upper_cutoff_percentile, lower_cutoff_percentile)) + labs(title = glue::glue('Pre-outlier capping histogram of {metric}'))
+  p2 <- plot_outlier_distribution(capped_data, metric, percentiles = c(upper_cutoff_percentile, lower_cutoff_percentile)) + labs(title = glue::glue('Post-outlier capping histogram of {metric}'))
 
+  # Print the histograms
+  print(p1)
+  print(p2)
+
+  # Return the capped dataset
+  return(capped_data)
+}
+
+# Cap outliers for each metric
+ttops_capped <- ttops
+
+for (metric in metrics) {
+  ttops_capped <- cap_outliers(ttops_capped, metric, upper_cutoff_percentile, lower_cutoff_percentile)
+}
+
+ttops <- ttops_capped
 
 # Calculate Heygi index for each tree
 print(glue::glue('Calculating Heygi index for {nrow(ttops)} tree tops'))
+
 ttops <- silvtools::heygi_cindex(ttops, comp_input = 'vol_concave', maxR = 6)
 
-ttops <- ttops %>% mutate(cindex = ifelse(cindex > 40, 40, cindex)) %>% mutate(vol_concave = ifelse(vol_concave > 1000, 1000, vol_concave))
+ttops_capped <- ttops %>% mutate(cindex = ifelse(cindex > 25, 25, cindex))
+
+ttops <- ttops_capped
+
+plot_outlier_distribution(ttops_capped, metric = 'cindex')
 
 # Apply linear bai models
 
 ttops <- ttops %>% mutate(mean_bai_5 = (369.924 + 3.676 * vol_concave), mean_bai_10 = (450.285 + 3.803 * vol_concave),
                           sum_bai_5 = (4289.062 + 43.452 * vol_concave), sum_bai_10 = (9727.30 + 81.75 * vol_concave))
 
-# Create a square grid with 100m2 cells
-square_grid <- st_make_grid(ttops, cellsize = cellsize, square = TRUE) %>% st_as_sf()
-# Create a hexagonal grid with 100m2 cells
-hex_grid <- st_make_grid(ttops, cellsize = cellsize, square = FALSE) %>% st_as_sf()
+bai_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = 1000, grid_shape = 'hexagon', summary_var = 'mean_bai_5', summary_fun = 'sum')
+cindex_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = 1000, grid_shape = 'hexagon', summary_var = 'cindex', summary_fun = 'sum')
 
-print(glue::glue('Intersecting {cellsize}x{cellsize}m grid with tree tops'))
+grids <- st_join(bai_grid, cindex_grid)
 
-plot(st_geometry(ttops))
-plot(st_geometry(square_grid), border = 'red', add = T)
-
-# Add grid ID of cell intersecting with each tree top
-contained  <- st_contains(square_grid, ttops) %>%
-  as.data.frame() %>%
-  rename(cell_id = row.id, point_id = col.id) %>%
-  merge(ttops, . , by = 'point_id')
-
-# Generate summary metrics for each grid cell
-print(glue::glue('Generating summary metrics for ashapes on {cellsize}x{cellsize}m'))
-stats <- contained %>% group_by(cell_id) %>% summarise(mean_cv = mean(vol_concave), sd_cv = sd(vol_concave), n = n(),
-                                                       mean_ci = mean(cindex), sd_ci = sd(cindex),
-                                                       mean_bai_5 = mean(mean_bai_5), sd_bai_5 = sd(mean_bai_5),
-                                                       sum_mean_bai_5 = sum(mean_bai_5), sum_mean_bai_10 = sum(mean_bai_10),
-                                                       mean_bai_10 = mean(mean_bai_10), sd_bai_10 = sd(mean_bai_10), n_trees = n())
-# Join summary metrics to original grid
-grid_cv <- st_join(square_grid, stats) #%>% filter(!is.na(cell_id))
-
-# Hexagons
-
-# Add grid ID of cell intersecting with each tree top
-contained  <- st_contains(hex_grid, ttops) %>%
-  as.data.frame() %>%
-  rename(cell_id = row.id, point_id = col.id) %>%
-  merge(ttops, . , by = 'point_id')
-
-# Generate summary metrics for each grid cell
-print(glue::glue('Generating summary metrics for ashapes on {cellsize}x{cellsize}m'))
-
-stats <- contained %>% group_by(cell_id) %>% summarise(mean_cv = mean(vol_concave), sd_cv = sd(vol_concave), n = n(),
-                                                       mean_ci = mean(cindex), sd_ci = sd(cindex),
-                                                       mean_bai_5 = mean(mean_bai_5), sd_bai_5 = sd(mean_bai_5),
-                                                       sum_mean_bai_5 = sum(mean_bai_5), sum_mean_bai_10 = sum(mean_bai_10),
-                                                       mean_bai_10 = mean(mean_bai_10), sd_bai_10 = sd(mean_bai_10)) %>% ungroup()
-# Join summary metrics to original grid
-grid_cv_hex <- st_join(hex_grid, stats) %>% filter(!is.na(cell_id))
-
-
-grids <- list(grid_cv, grid_cv_hex)
 return(grids)
 
 }
+
+# Plot Grids
+
+percentile_breaks <- function(data, percentiles) {
+  sapply(percentiles, function(p) quantile(data, probs = p/100, na.rm = TRUE))
+}
+
+percentiles <- c(0, 5, 15, 25, 50, 75, 90, 95, 100)
+
+# Calculate breaks for sum_mean_bai_5 and sum_cindex
+bai_breaks <- percentile_breaks(grids$sum_mean_bai_5, percentiles)
+cindex_breaks <- percentile_breaks(grids$sum_cindex, percentiles)
+
+plot_outlier_distribution(grids, metric = 'sum_mean_bai_5', percentiles = percentiles)
+plot_outlier_distribution(grids, metric = 'sum_cindex', percentiles = percentiles)
+
+# Function to generate custom labels
+custom_labels <- function(breaks) {
+  sapply(seq_along(breaks)[-1], function(i) {
+    paste0(format(round(breaks[i-1], 0), big.mark = ","), " - ", format(round(breaks[i], 0), big.mark = ","))
+  })
+}
+
+library(sf)
+library(ggplot2)
+library(gridExtra)
+
+# Define the desired CRS
+utm_crs <- st_crs("+init=EPSG:26910")
+
+# Create a plot for sum_mean_bai_5 with UTM 10N coordinates
+plot_bai <- ggplot() +
+  geom_sf(data = grids, aes(fill = cut(sum_mean_bai_5, breaks = bai_breaks)), color = "black", size = 0.1) +
+  scale_fill_manual(name = "Cumulative Mean Basal\nArea of Last 5 Years (mm/yr)",
+                    values = colorRampPalette(c("white", "darkgreen"))(length(bai_breaks) - 1),
+                    labels = custom_labels(bai_breaks)) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal") +
+  coord_sf(crs = utm_crs)
+
+# Create a plot for sum_cindex with UTM 10N coordinates
+plot_cindex <- ggplot() +
+  geom_sf(data = grids, aes(fill = cut(sum_cindex, breaks = cindex_breaks)), color = "black", size = 0.1) +
+  scale_fill_manual(name = "Cumulative Competition Index",
+                    values = colorRampPalette(c("white", "darkred"))(length(cindex_breaks) - 1),
+                    labels = custom_labels(cindex_breaks)) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal") +
+  coord_sf(crs = utm_crs)
+
+# Arrange the two plots side-by-side
+grid.arrange(plot_bai, plot_cindex, ncol = 2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 st_write(grid_cv_hex, glue::glue('{proj_dir}/output/vector/{acq}_heygi_bai_ashape_hexgrid_{cellsize}m.gpkg'), append = FALSE)
 

@@ -25,15 +25,25 @@ plot_outlier_distribution <- function(data, metric, percentiles = c(1, 2, 90, 95
   metric_data <- data %>% pull({{metric}})
   cutoff_values <- quantile(metric_data, probs = percentiles / 100)
 
+  # Create a dataframe to store the x positions and labels for the vertical lines
   annot_df <- data.frame(x = cutoff_values, quantile = names(cutoff_values))
 
+  # Create the histogram plot
   plot <- ggplot(data, aes(x = !!sym(metric))) +
-    geom_histogram(bins = 30, color = "black", fill = "dodgerblue", alpha = 0.7) +
-    labs(title = paste0("Histogram of ", metric), x = metric, y = "Frequency") +
+    geom_histogram(bins = 30, color = "black", fill = "dodgerblue", alpha = 0.7) + # Histogram
+    labs(title = paste0("Histogram of ", metric), x = metric, y = "Frequency") + # Axis labels and title
+
+    # Add vertical lines at specified percentiles
     geom_vline(data = annot_df,
-               mapping = aes(xintercept=x,color=quantile), linetype = "dashed", size = 0.8) +
-    scale_color_manual(values = viridis::viridis(length(percentiles))) +
+               mapping = aes(xintercept=x, color=quantile), linetype = "dashed", size = 0.8) +
+
+    # Set the color scale for the vertical lines and order the legend items
+    scale_color_manual(values = viridis::viridis(length(percentiles)),
+                       breaks = names(sort(cutoff_values))) +
+
+    # Apply a minimal theme to the plot
     theme_minimal()
 
   return(plot)
 }
+
