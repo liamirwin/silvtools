@@ -6,13 +6,15 @@
 #' @return No return value. This function runs a Shiny app.
 #' @examples
 #' \dontrun{
+#'
 #' library(silvtools)
 #' # Get the example dataset path
 #' example_data_path <- system.file("extdata", "individual_trees", package = "silvtools")
 #'
 #' # Launch the Shiny app with the example dataset
-#' alphacrown(example_data_path)
+#' run_alphacrown(example_data_path)
 #' }
+#'
 #' @import shiny rgl glue lidR alphashape3d
 #' @export
 #'
