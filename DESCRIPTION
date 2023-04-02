@@ -26,6 +26,7 @@ Imports:
     rgl,
     SearchTrees,
     sf,
+    shiny,
     siplab,
     spatstat.geom,
     stringr,
