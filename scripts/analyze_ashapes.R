@@ -97,15 +97,12 @@ analyze_ashape <- function(las_file, decimate = FALSE){
   return(df)
 }
 
-ashape_list <- list()
+# ashape_list <- list()
+#
+# for(k in 1:length(tree_list)){
+#   las_file <- tree_list[k]
+#   ashape_list[[k]] <- analyze_ashape(las_file, decimate = FALSE)
+# }
 
-for(k in 1:length(tree_list)){
-  las_file <- tree_list[k]
-  ashape_list[[k]] <- analyze_ashape(las_file, decimate = FALSE)
-}
 
 
-
-# Extract Individual Tree Las Files
-
-tree_las_list <- list.files('H:/Quesnel_2022/process/CT1/output/tree_las')
