@@ -37,8 +37,8 @@ apply_treeid_to_las <- function(chunk, crowns){
   tictoc::toc()
   return(tree_las)
 }
-library(future)
 
+library(future)
 library(glue)
 library(lidR)
 library(future.apply)
@@ -48,12 +48,13 @@ library(silvtools)
 library(dplyr)
 # List directories (each is one acquisiton of ULS/DAP)
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
+
 # Omit these already processed blocks from processing stream
-processed <- c('CT1','CT5')
+processed <- c('CT1','CT5', 'CT1-T-DAP')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 blocks_dir <- c("H:/Quesnel_2022/process/CT1-T-DAP")
 is_dap <- TRUE
-
+is_dap <- F
 for(i in 1:length(blocks_dir)){
 
 proj_dir <- blocks_dir[i]
