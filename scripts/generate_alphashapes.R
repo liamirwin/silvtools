@@ -4,7 +4,7 @@ blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 
 is_dap <- FALSE
 
-for(i in 1:length(blocks_dir))
+for(i in 1:length(blocks_dir)){
 
 tictoc::tic()
 
@@ -26,7 +26,7 @@ raster_output <- glue::glue('{proj_dir}/output/raster')
 vector_output <- glue::glue('{proj_dir}/output/vector')
 image_output <- glue::glue('{proj_dir}/output/png/ashape_snapshots')
 
-tree_las_list <- list.files(glue::glue('{proj_dir}/input/tree_las'), pattern = '.laz', full.names = T)
+tree_las_list <- list.files(glue::glue('{proj_dir}/output/tree_las'), pattern = '.laz', full.names = T)
 ashape_mets <- list()
 
 if(!dir.exists(glue::glue('{proj_dir}/output/crowns/ashapes'))){
@@ -50,6 +50,7 @@ ashape_sf <- ashape_df %>% st_as_sf(coords = c('X','Y'), crs = 26910, remove = F
 write.csv(ashape_df, glue::glue('{proj_dir}/output/crowns/ashapes/{acq}_chunk_5cmvoxel_all_ashapes.csv'))
 st_write(ashape_sf, glue::glue('{proj_dir}/output/crowns/ashapes/{acq}_chunk_5cmvoxel_ashape_ttops.gpkg'))
 
+}
 
 # Create a square grid with 100m2 cells
 square_grid <- st_make_grid(ashape_sf, cellsize = 10, square = TRUE)

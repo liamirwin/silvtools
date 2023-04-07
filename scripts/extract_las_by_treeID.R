@@ -1,10 +1,7 @@
-extract_las_by_treeid <- function(chunk){
-
-}
 
 library(lidR)
 library(glue)
-
+library(future)
 # Define a filter function for catalog_apply
 filter_tree <- function(chunk, output_dir) {
   # Read the LAS data
@@ -29,14 +26,14 @@ filter_tree <- function(chunk, output_dir) {
 }
 
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
-processed <- c('CT1-T-DAP','CT2','CT3','CT4','CT5')
+processed <- c('CT1-T-DAP','CT1','CT5')
 # target <- c('CT1')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 is_dap <- FALSE
-proj_dir <- blocks_dir[i]
+
 
 for(i in 1:length(blocks_dir)){
-
+  proj_dir <- blocks_dir[i]
 if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
   is_dap = TRUE
   # Set acquisition name (DAPYY_blockname)
