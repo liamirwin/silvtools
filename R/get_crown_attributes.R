@@ -31,7 +31,7 @@ get_crown_attributes <- function(X,Y,Z,pb = NULL){
   a3d[,1] = a3d[,1] - mean(a3d[,1]) #center points around 0,0,0
   a3d[,2] = a3d[,2] - mean(a3d[,2]) #center points around 0,0,0
   alpha <- c(Inf, 1)
-  ashape <- alphashape3d::ashape3d(x = a3d, alpha = alpha)
+  ashape <- alphashape3d::ashape3d(x = a3d, alpha = alpha, pert = TRUE)
   # Return Number Distribution Metrics (function of crown transparency)
   # if(length(Z) == length(ReturnNumber)){
   # ZRN = cbind(Z, ReturnNumber)

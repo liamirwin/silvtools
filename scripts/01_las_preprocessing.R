@@ -13,30 +13,30 @@ library(geometry) # Required for rumple metrics
 
 # ---- Processing switches ----
 # ULS or DAP?
-is_dap <- FALSE
+is_dap <- TRUE
 # Run in parallel?
 run_parallel <- T
-num_cores <- 4L
+num_cores <- 3L
 # Tile area?
-make_tile <- T
+make_tile <- F
 # Tile size (m)
-tile_size <- 250
-chunk_buf <- 10
+tile_size <- 100
+chunk_buf <- 5
 # Classify ground points?
-ground_classify <- T
+ground_classify <- F
 # Normalize points?
-normalize <- T
+normalize <- F
 # Create DSM?
 make_dsm <- T
-dsm_res <- 0.10
+dsm_res <- 0.05
 # Create CHM?
 make_chm <- TRUE
-chm_res <- 0.10
+chm_res <- 0.05
 # Create DTM?
-make_dtm <- T
-dtm_res <- 0.10
+make_dtm <- F
+dtm_res <- 0.25
 # Calculate Metrics?
-make_mets <- T
+make_mets <- F
 met_res <- 1
 # Is ALS?
 is_als <- F
@@ -44,15 +44,11 @@ is_mls <- F
 # List directories (each is one acquisiton of ULS/DAP)
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these blocks from processing stream
-processed <- c('CT1','CT2','CT3','CT4','CT5')
+processed <- c('CT1','CT2','CT3','CT4','CT5', 'CT1-T-DAP', 'CT1-DAP')
 # target <- c('CT1')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 # blocks_dir <- blocks_dir[basename(blocks_dir) %in% target]
-blocks_dir <- 'D:/Silva21/AGM_2023/oak_island'
-blocks_dir <- 'F:/Quesnel_2022/GeoSLAM/plot_las/CT1P2'
-blocks_dir <- 'D:/riccarton_bush'
-blocks_dir <- 'Y:/Irwin/NZ_2023/Campbell/Campbell_ULS'
-blocks_dir <- 'H:/Cass_ULS'
+blocks_dir <- 'G:/Block_18/blocks/N'
 ################################################################################
 # START BUTTON
 ################################################################################
@@ -69,7 +65,7 @@ raster_output <- glue::glue('{proj_dir}/output/raster')
 vector_output <- glue::glue('{proj_dir}/output/vector')
 
 
-if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
+if(stringr::str_detect(basename(proj_dir), pattern = 'DAP') | is_dap){
   is_dap = TRUE
   # Set acquisition name (DAPYY_blockname)
   acq <- paste0('DAP22_', stringr::str_replace(basename(proj_dir), pattern = "-DAP", replacement = ""))
@@ -122,6 +118,9 @@ if(make_tile == TRUE){
   print(glue::glue('Beginning tiling process for {acq} at {tile_size}m'))
   ctg_tile <- catalog_retile(ctg_tile)
   print(glue::glue('Tiling process complete for {acq} {nrow(ctg_tile)} {tile_size}m tiles created'))
+  # Index Tiles
+  lidR:::catalog_laxindex(ctg_tile)
+  print(glue::glue('Indexing of tiles for {acq} {nrow(ctg_tile)} {tile_size}m complete'))
   tictoc::toc()
 }
 
@@ -144,7 +143,14 @@ if (ground_classify == TRUE) {
     print(glue::glue('Created a directory for classified laz files at {class_dir}'))
   }
   if(is_dap){
+    las <- readLAS(ctg_tile[1,])
+    if('confidence' %in% names(las)){
     opt_filter(ctg_tile) = "-keep_random_fraction 0.01 -keep_attribute_above 0 2"
+    print(glue::glue('Confidence attribute detected in DAP point cloud; filtering high confidence points for ground classification'))
+    } else{
+    opt_filter(ctg_tile) = "-keep_random_fraction 0.01"
+    print(glue::glue('No confidence attribute detected in DAP point cloud'))
+    }
     ctg_class <- classify_ground(ctg_tile, algorithm = csf(
       sloop_smooth = FALSE,
       class_threshold = 0.07,
@@ -167,7 +173,8 @@ if (ground_classify == TRUE) {
       time_step = 0.65))
     }else{
     ctg_class <- lidR::classify_ground(ctg_tile, csf(class_threshold = 0.25, cloth_resolution = 0.25, rigidness = 2))
-  }
+    }
+  lidR:::catalog_laxindex(ctg_class)
   print(glue::glue('Ground classification process for {acq} complete'))
 }
 
@@ -198,7 +205,7 @@ if(make_dtm == TRUE){
                pattern = '.tif$',
                full.names = T)
   dtm <-
-    vrt(dtm_tiles,
+    terra::vrt(dtm_tiles,
         glue::glue('{raster_output}/dtm/tiles/{acq}_dtm.vrt'),
         overwrite = T)
 
@@ -247,6 +254,8 @@ if(normalize == TRUE){
   # Normalize point cloud
   ctg_norm <- lidR::normalize_height(ctg_class, tin())
   }
+  lidR:::catalog_laxindex(ctg_norm)
+  print('Indexed normalized tiles...')
 }
 
 
