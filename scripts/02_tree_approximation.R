@@ -374,6 +374,9 @@ print('Cleaning lmf(ws = 2) crowns...')
 crowns_p <- sf::st_as_sf(terra::as.polygons(crowns)) %>%
   silvtools::convert_multi_to_single_polygons(polygons = ., fill_holes = TRUE)
 
+# convert single part polygons back to raster
+crowns_r <- crowns_p %>% terra::vect() %>% terra::rasterize()
+
 print('Cleaning lmfauto( ) crowns...')
 # lmfauto( )
 crowns_auto_p <- sf::st_as_sf(terra::as.polygons(crowns_auto)) %>%

@@ -13,30 +13,32 @@ library(geometry) # Required for rumple metrics
 
 # ---- Processing switches ----
 # ULS or DAP?
-is_dap <- TRUE
+is_dap <- FALSE
 # Run in parallel?
 run_parallel <- T
 num_cores <- 3L
 # Tile area?
-make_tile <- F
+make_tile <- T
 # Tile size (m)
-tile_size <- 100
+tile_size <- 50
 chunk_buf <- 5
 # Classify ground points?
-ground_classify <- F
+ground_classify <- T
 # Normalize points?
-normalize <- F
+normalize <- T
+# Filter out outlier normalized returns?
+filter_normalize <- T
 # Create DSM?
 make_dsm <- T
-dsm_res <- 0.05
+dsm_res <- 0.10
 # Create CHM?
 make_chm <- TRUE
-chm_res <- 0.05
+chm_res <- 0.10
 # Create DTM?
-make_dtm <- F
+make_dtm <- T
 dtm_res <- 0.25
 # Calculate Metrics?
-make_mets <- F
+make_mets <- T
 met_res <- 1
 # Is ALS?
 is_als <- F
@@ -49,13 +51,20 @@ processed <- c('CT1','CT2','CT3','CT4','CT5', 'CT1-T-DAP', 'CT1-DAP')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 # blocks_dir <- blocks_dir[basename(blocks_dir) %in% target]
 blocks_dir <- 'G:/Block_18/blocks/N'
+blocks_dir <- 'I:/NZ_2023/Cass/ULS_Subset'
+
 ################################################################################
 # START BUTTON
 ################################################################################
 
 for(i in 1:length(blocks_dir)){
 
-  tictoc::tic()
+tictoc::tic()
+
+
+if(length(blocks_dir) == 1){
+    i <- 1
+}
 
 proj_dir <- blocks_dir[i]
 
@@ -254,11 +263,45 @@ if(normalize == TRUE){
   # Normalize point cloud
   ctg_norm <- lidR::normalize_height(ctg_class, tin())
   }
+  if(filter_normalize == F){
   lidR:::catalog_laxindex(ctg_norm)
   print('Indexed normalized tiles...')
+  }
 }
 
 
+if(filter_normalize == T){
+  norm_dir <- glue::glue('{proj_dir}/input/las/norm')
+  ctg_norm <- lidR::catalog(norm_dir)
+  opt_output_files(ctg_norm) <- '{norm_dir}/{acq}_{XLEFT}_{YBOTTOM}_norm'
+  opt_filter(ctg_norm)       <- "-drop_z_below 0"
+  opt_chunk_buffer(ctg_norm) <- chunk_buf
+  opt_laz_compression(ctg_norm) <- T
+  opt_progress(ctg_norm) <- T
+  # Removes outliers in by calculating the 95th percentile
+  # of height in 10x10m pixels, and filtering out points above the 95th percentile plus 20%
+  filter_noise = function(las, sensitivity)
+  {
+    if (is(las, "LAS"))
+    {
+      p95 <- pixel_metrics(las, ~quantile(Z, probs = 0.95), 10)
+      las <- merge_spatial(las, p95, "p95")
+      las <- filter_poi(las, Z < p95*sensitivity)
+      las$p95 <- NULL
+      return(las)
+    }
+
+    if (is(las, "LAScatalog"))
+    {
+      res <- catalog_map(las, filter_noise, sensitivity = sensitivity)
+      return(res)
+    }
+  }
+  filter_noise(ctg_norm, tolerance = 1.2)
+  ctg_norm <- lidR::catalog(norm_dir)
+  lidR:::catalog_laxindex(ctg_norm)
+  print('Indexed normalized tiles...')
+}
 
 # ---- Metrics -----
 
@@ -274,9 +317,15 @@ if(make_mets == TRUE){
   opt_select(ctg_norm) <- "xyz"
   opt_filter(ctg_norm) <- "-drop_withheld -drop_z_below 0"
   opt_progress(ctg_norm) <- T
+
+
+  # Basic metrics suite
+  # -------------------
+
   print(glue::glue('Generating basic metrics for {acq} at {met_res}m'))
   basic <- pixel_metrics(ctg_norm, ~lidRmetrics::metrics_basic(Z), res = met_res)
   terra::writeRaster(x = basic, filename = glue::glue('{raster_output}/metrics/{acq}_basic_{met_res}m.tif'), overwrite = TRUE)
+
 
 }
 
