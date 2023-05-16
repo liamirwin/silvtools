@@ -33,6 +33,7 @@ apply_treeid_to_las <- function(chunk, crowns){
   # Merge tree IDs with las
   tree_las <- merge_spatial(las, chunk_crowns, attribute = 'treeID')
   tree_las = add_lasattribute(tree_las, name="treeID", desc="ID of a tree")
+  tree_las <- filter_poi(tree_las, !is.na(treeID))
   glue::glue('Merged {nrow(chunk_crowns)} crowns with {length(las@data$Z)} points in chunk')
   tictoc::toc()
   return(tree_las)
@@ -46,20 +47,31 @@ library(future)
 library(sf)
 library(silvtools)
 library(dplyr)
+
+# Apply segmented crowns to las point clouds
+
 # List directories (each is one acquisiton of ULS/DAP)
-blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
+blocks_dir <- list.dirs('G:/Quesnel_2022/process', recursive = FALSE)
 
 # Omit these already processed blocks from processing stream
-processed <- c('CT1','CT5', 'CT1-T-DAP')
-blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
-blocks_dir <- c("H:/Quesnel_2022/process/CT1-T-DAP")
-is_dap <- TRUE
+processed <- c('CT3','CT4')
+processed <- c('CT2','CT4')
+blocks_dir <- blocks_dir[basename(blocks_dir) %in% processed]
 is_dap <- F
-for(i in 1:length(blocks_dir)){
+# Run in parallel?
+run_parallel <- T
+num_cores <- 2L
+# Chunk buffer
+chunk_buf <- 5
 
+# ---- Apply TreeID from Crowns to LAS Files
+
+
+for(i in 1:length(blocks_dir)){
+tictoc::tic()
 proj_dir <- blocks_dir[i]
 
-if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
+if(stringr::str_detect(basename(proj_dir), pattern = 'DAP') | is_dap == T){
   is_dap = TRUE
   # Set acquisition name (DAPYY_blockname)
   acq <- glue::glue('DAP22_{stringr::str_replace(basename(proj_dir), pattern = "-DAP", replacement = "")}')
@@ -71,156 +83,86 @@ if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
   print(glue::glue('Set acqusition type as lidar (ULS) named {acq}'))
 }
 
-
+# Load Normalized LAS tiles
 ctg <- catalog(glue::glue('{proj_dir}/input/las/norm'))
+# Load pre-generated cleaned tree crown polygons
 crowns <- st_read(glue::glue('{proj_dir}/output/vector/crowns/{acq}_lmf_ws2_watershed_crowns.shp'))
 
+# Create directory for output treeID las files
 if(!dir.exists(glue::glue('{proj_dir}/output/tree_las'))){
   dir.create(glue::glue('{proj_dir}/output/tree_las'))
   glue::glue('Created tree las directory at {proj_dir}/output/tree_las')
 }
 
+# Catalog setup
 opt_output_files(ctg) <- "{proj_dir}/output/tree_las/{*}_treeid"
 opt_stop_early(ctg) <- F
 opt_progress(ctg) <- T
 opt_laz_compression(ctg) <- T
-opt_chunk_buffer(ctg) <- 5
+opt_chunk_buffer(ctg) <- 0
 opt_filter(ctg) <- "-thin_with_voxel 0.05"
+
+if(run_parallel){
+# Enable parallel processing
 plan(multisession, workers = 3L)
-plan(sequential)
-tree_ctg <- catalog_apply(ctg, apply_treeid_to_las, crowns = crowns)
-print(glue::glue('Finished applying tree ids for {acq}, beginning alphashape computation at {Sys.time()}'))
-generate_alphashape(proj_dir, acq, num_cores = 3L)
-print(glue::glue('Finished applying tree ids for {acq}, beginning alphashape computation at {Sys.time()}'))
-}
-
-# Clean duplicate alphashapes by filtering same tree ID and taking tree with greater n_points
-
-# List directories (each is one acquisiton of ULS/DAP)
-blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
-# Omit these already processed blocks from processing stream
-processed <- c('CT1','CT2','CT3','CT4','CT5')
-blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
-i = 1
-is_dap <- TRUE
-
-proj_dir <- blocks_dir[i]
-
-if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
-  is_dap == TRUE
-  # Set acquisition name (DAPYY_blockname)
-  acq <- glue::glue('DAP22_{stringr::str_replace(basename(proj_dir), pattern = "-DAP", replacement = "")}')
-  print(glue::glue('Set acqusition type as DAP named {acq}'))
+print(glue::glue('Parallel processing initiated for {acq} with {num_cores} cores'))
 } else{
-  is_dap == FALSE
-  # Set acquisition name (ULSYY_blockname)
-  acq <- glue::glue('ULS22_{basename(proj_dir)}')
-  print(glue::glue('Set acqusition type as lidar (ULS) named {acq}'))
+plan(sequential)
+print(glue::glue('Beginning applying treeIDs for {acq} with one core'))
+}
+# Apply treeIDs from polygons
+tree_ctg <- catalog_apply(ctg, apply_treeid_to_las, crowns = crowns)
+print(glue::glue('Finished applying tree ids for {acq}'))
+# Index newly created LAS files
+lidR:::catalog_laxindex(tree_ctg)
+print(glue::glue('Finished indexing tree id las for {acq}'))
+tictoc::toc()
+
 }
 
+# Generate alphashapes for treeID las files
 
+for(i in 1:length(blocks_dir)){
 
-# Functionalize
+  tictoc::tic()
+  proj_dir <- blocks_dir[i]
 
-generate_alphashape <- function(proj_dir, acq, num_cores = 1) {
-  # Generate Alphashapes
+# Setup acquisiton name
 
-  # Define output directories
-  raster_output <- glue::glue('{proj_dir}/output/raster')
-  vector_output <- glue::glue('{proj_dir}/output/vector')
-  image_output <- glue::glue('{proj_dir}/output/png/ashape_snapshots')
-
-  # Get a list of all .laz files in the input directory
-  tree_las_list <- list.files(glue::glue('{proj_dir}/output/tree_las'), pattern = '.laz', full.names = T)
-
-  # Initialize a list to store alphashape metrics
-  ashape_mets <- list()
-
-  # Check if the output directory for alphashapes exists, and create it if it doesn't
-  if(!dir.exists(glue::glue('{proj_dir}/output/crowns/ashapes'))){
-    dir.create(glue::glue('{proj_dir}/output/crowns/ashapes'), recursive = T)
-    print(glue::glue('Created alphashape save directory for {acq}'))
+  if(stringr::str_detect(basename(proj_dir), pattern = 'DAP') | is_dap == T){
+    is_dap = TRUE
+    # Set acquisition name (DAPYY_blockname)
+    acq <- glue::glue('DAP22_{stringr::str_replace(basename(proj_dir), pattern = "-DAP", replacement = "")}')
+    print(glue::glue('Set acqusition type as DAP named {acq}'))
+  } else{
+    is_dap == FALSE
+    # Set acquisition name (ULSYY_blockname)
+    acq <- glue::glue('ULS22_{basename(proj_dir)}')
+    print(glue::glue('Set acqusition type as lidar (ULS) named {acq}'))
   }
 
-  # Define a function to get alphashape metrics for a single LAS file
-  get_alphashape_metrics_fun <- function(las_filename) {
-    las <- readLAS(las_filename, filter = "-thin_with_voxel 0.05")
-    ashape_metrics <- get_alphashape_metrics(las)
-    readr::write_csv(
-      ashape_metrics,
-      file = glue::glue('{proj_dir}/output/crowns/ashapes/{acq}_chunk_5cmvoxel_ashapes.csv'),
-      append = T,
-      col_names = T)
-    return(ashape_metrics)
-  }
-  print(glue::glue('Beginning parallel processing for {acq} Alphashapes at {Sys.time()}'))
-  # Use future_lapply to process the LAS files in parallel if more than one core is specified
-  if(num_cores > 1){
-    library(future.apply)
-    plan(multisession, workers = num_cores)
+# Load treeID LAS files as catalog
+tree_ctg <- catalog(glue::glue('{proj_dir}/output/tree_las'))
+opt_progress(tree_ctg) <- T
+opt_chunk_buffer(tree_ctg) <- chunk_buf
+# Save alphashape dataframe for each tile with XLEFT and YBOTTOM position
+opt_output_files(tree_ctg) <- '{proj_dir}/output/crowns/{acq}_ashapes_{XLEFT}_{YBOTTOM}'
+# Output dataframes as CSV
+tree_ctg@output_options$drivers$data.frame$extension <- '.csv'
 
-    results <- future_lapply(tree_las_list, get_alphashape_metrics_fun)
+if(run_parallel){
+  # Enable parallel processing
+  plan(multisession, workers = 3L)
+  print(glue::glue('Parallel processing initiated for {acq} with {num_cores} cores'))
+} else{
+  plan(sequential)
+  print(glue::glue('Beginning generating alphashapes for {acq} with one core'))
+}
+# Generate alphashape dataframes
+ashapes <- catalog_apply(tree_ctg, get_alphashape_metrics)
 
-  } else {
-    # Otherwise, use lapply to process the LAS files sequentially
-    results <- lapply(tree_las_list, get_alphashape_metrics_fun)
-  }
+print(glue::glue('Finished alphashape computation for {acq}'))
+tictoc::toc()
 
-  # Define a function to print progress updates
-  print_progress <- function(i, num_files) {
-    message(glue::glue('Processed {i} out of {num_files} files.'))
-  }
-
-  # Loop through the results and print progress updates
-  for(i in seq_along(results)) {
-    print_progress(i, length(results))
-  }
-
-  # Return NULL invisibly
-  return(invisible(NULL))
 }
 
-
-
-generate_alphashape(proj_dir, acq, num_cores = 4L)
-
-
-# NON PARRALEL FUNCTION
-
-generate_alphashapes <- function(proj_dir, acq) {
-  # Define paths to output directories
-  raster_output <- glue::glue('{proj_dir}/output/raster')
-  vector_output <- glue::glue('{proj_dir}/output/vector')
-  image_output <- glue::glue('{proj_dir}/output/png/ashape_snapshots')
-
-  # Get a list of input files
-  tree_las_list <- list.files(glue::glue('{proj_dir}/input/tree_las'), pattern = '.laz', full.names = T)
-
-  # Check if output directory for alphashapes exists, create it if it doesn't
-  if(!dir.exists(glue::glue('{proj_dir}/output/crowns/ashapes'))){
-    dir.create(glue::glue('{proj_dir}/output/crowns/ashapes'), recursive = T)
-    print(glue::glue('Created alphashape save directory for {acq}'))
-  }
-
-  # Define function to generate alphashape metrics for a single file
-  generate_alphashape <- function(las_file) {
-    las <- readLAS(las_file, filter = "-thin_with_voxel 0.05")
-    print(glue::glue('Loaded las {las_file}'))
-    ashape_metrics <- get_alphashape_metrics(las)
-    # Write alphashape
-    readr::write_csv(ashape_metrics,
-                     file = glue::glue('{proj_dir}/output/crowns/ashapes/{acq}_chunk_5cmvoxel_ashapes.csv'),
-                     append = T)
-    print(glue::glue('Done processing {las_file}'))
-    return(ashape_metrics)
-  }
-
-
-
-  # Apply generate_alphashape function to each input file
-  ashape_mets <- lapply(tree_las_list, generate_alphashape)
-
-
-
-  return(ashape_mets)
-}

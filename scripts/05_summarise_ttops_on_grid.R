@@ -3,23 +3,21 @@
 library(sf)
 library(tidyverse)
 library(gridExtra)
-
+library(silvtools)
 
 # List directories (each is one acquisiton of ULS/DAP)
-blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
+blocks_dir <- list.dirs('G:/Quesnel_2022/process', recursive = FALSE)
 # Omit these already processed blocks from processing stream
-processed <- c('CT3','CT4','CT5')
-blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
+processed <- c('CT2','CT3','CT4')
+processed <- c('CT2')
+blocks_dir <- blocks_dir[basename(blocks_dir) %in% processed]
 # ULS or DAP?
 is_dap <- FALSE
 i = 1
 # ---- Project setup ----
 acq = NULL
 proj_dir <- blocks_dir[i]
-
-# Clamp outliers and Convert Alphashape Attributed Treetops to Summary Grid for BAI and Competition
-
-ttops_to_grid <- function(proj_dir, cellsize = 10, square = TRUE, acq = NULL, clip_to_bdy = FALSE){
+coords <- 26910
 
 if(is.null(acq)){
   if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
@@ -35,17 +33,49 @@ if(is.null(acq)){
   }
 }
 
+
 # Read Alphashape tree tops
+
+if(length(list.files(glue::glue('{proj_dir}/output/crowns/ashapes'), pattern = '.csv')) > 1){
+  csvs <- list.files(glue::glue('{proj_dir}/output/crowns/ashapes'), pattern = '.csv', full.names = T)
+  print(glue::glue('More than one alphashape CSV is present; reading and binding all {length(csvs)} tables'))
+  ashapes <- list()
+  for(i in 1:length(csvs)){
+    ashapes[[i]] <- read.table(csvs[i], header = TRUE, sep = ",")
+  }
+  ashapes <- do.call(rbind, ashapes)
+} else{
 ashapes <- read.table(glue::glue('{proj_dir}/output/crowns/ashapes/{acq}_chunk_5cmvoxel_ashapes.csv'), header = TRUE, sep = ",")
 
+}
 # Clean up treetops
-ttops <- ashapes %>% filter(!ashapes$treeID %in% names(ashapes)) %>% st_as_sf(coords = c('X','Y'), crs = 26910, remove = FALSE) %>% mutate_if(is.character, as.numeric) %>%
-  mutate(treeID = as.integer(treeID), point_id = row_number()) %>% group_by(treeID) %>%
-  filter(n_points == max(n_points)) %>% filter(row_number() == 1) %>% ungroup()
+ttops <- ashapes %>%
+  # Remove headers
+  filter(!ashapes$treeID %in% names(ashapes)) %>%
+  # Convert to SF points
+  sf::st_as_sf(coords = c('X','Y'), crs = coords, remove = FALSE) %>%
+  # Convert value data types from character to numeric
+  mutate_if(is.character, as.numeric) %>%
+  mutate(treeID = as.integer(treeID), point_id = row_number()) %>%
+  # Group alphashapes with common treeIDs
+  group_by(treeID) %>%
+  # Extract tree with highest number of returns
+  filter(n_points == max(n_points)) %>%
+  filter(row_number() == 1) %>%
+  # Ungroup alphashapes
+  ungroup()
+
+print(glue::glue('Filtered out {nrow(ashapes) - nrow(ttops)} duplicate alphashapes ({round(((nrow(ashapes) - nrow(ttops))/nrow(ashapes)) * 100)}%)'))
 
 # Filter out unlikely trees
 
 ttops <- ttops %>% filter(vol_concave > 10) %>% filter(n_points > 50)
+
+
+
+# Clamp outliers and Convert Alphashape Attributed Treetops to Summary Grid for BAI and Competition
+
+ttops_to_grid <- function(proj_dir, cellsize = 10, square = TRUE, acq = NULL, clip_to_bdy = FALSE){
 
 
 # Adjust Outliers based on quantiles
@@ -53,8 +83,8 @@ ttops <- ttops %>% filter(vol_concave > 10) %>% filter(n_points > 50)
 metrics <- c('vol_concave','vol_convex')
 
 # Replace XX with your chosen percentile (e.g., 95, 99, etc.)
-upper_cutoff_percentile <- 99.5
-lower_cutoff_percentile <- 0.5
+upper_cutoff_percentile <- 99
+lower_cutoff_percentile <- 1
 
 # Function to cap outliers based on chosen quantile
 cap_outliers <- function(data, metric,  upper_cutoff_percentile, lower_cutoff_percentile) {
@@ -95,10 +125,12 @@ for (metric in metrics) {
 
 ttops <- ttops_capped
 
+st_write(ttops, glue::glue('{proj_dir}/output/vector/treetops/{acq}_ashape_ttops.gpkg'), append = FALSE)
+
 # Calculate Heygi index for each tree
 print(glue::glue('Calculating Heygi index for {nrow(ttops)} tree tops'))
 
-ttops <- silvtools::heygi_cindex(ttops, comp_input = 'vol_concave', maxR = 6)
+ttops <- heygi_cindex(ttops, comp_input = 'vol_concave', maxR = 6)
 
 plot_outlier_distribution(ttops, metric = 'cindex', percentiles = c(1, 5, 99.5))
 plot_outlier_distribution(ttops, metric = 'vol_concave', percentiles = c(1, 5, 99.5))

@@ -22,6 +22,16 @@ tree_matching = function(reference, detected, PlotID)
   stopifnot(is(detected, "sf"))
   stopifnot(is(reference, "sf"))
 
+  if('geom' %in% names(reference)){
+    reference <- reference %>% rename(geometry = geom)
+    print('Renamed geom column to geometry')
+  }
+
+  if('geom' %in% names(detected)){
+    detected <- detected %>% rename(geometry = geom)
+    print('Renamed geom column to geometry')
+  }
+
   reference <- reference %>%
     dplyr::rename(X_postex = X, Y_postex = Y) %>%
     dplyr::mutate(X = unlist(purrr::map(.$geometry,1)), Y = unlist(purrr::map(.$geometry,2)),
@@ -36,6 +46,10 @@ tree_matching = function(reference, detected, PlotID)
   y_truth     = xy_truth[,2]
   x_detected  = xy_detected[,1]
   y_detected  = xy_detected[,2]
+
+  if(!('Z' %in% names(detected))){
+    detected$Z <- detected$Zmax
+  }
   z_detected  = detected$Z
 
   # Attribution of nearest and 2nd neareast referenced tree index for each detected tree

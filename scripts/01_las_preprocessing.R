@@ -16,29 +16,29 @@ library(geometry) # Required for rumple metrics
 is_dap <- FALSE
 # Run in parallel?
 run_parallel <- T
-num_cores <- 3L
+num_cores <- 2L
 # Tile area?
 make_tile <- T
 # Tile size (m)
-tile_size <- 50
+tile_size <- 10
 chunk_buf <- 5
 # Classify ground points?
-ground_classify <- T
+ground_classify <- F
 # Normalize points?
-normalize <- T
+normalize <- F
 # Filter out outlier normalized returns?
-filter_normalize <- T
+filter_normalize <- F
 # Create DSM?
-make_dsm <- T
-dsm_res <- 0.10
+make_dsm <- F
+dsm_res <- 0.25
 # Create CHM?
-make_chm <- TRUE
-chm_res <- 0.10
+make_chm <- F
+chm_res <- 0.25
 # Create DTM?
-make_dtm <- T
+make_dtm <- F
 dtm_res <- 0.25
 # Calculate Metrics?
-make_mets <- T
+make_mets <- F
 met_res <- 1
 # Is ALS?
 is_als <- F
@@ -51,7 +51,7 @@ processed <- c('CT1','CT2','CT3','CT4','CT5', 'CT1-T-DAP', 'CT1-DAP')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 # blocks_dir <- blocks_dir[basename(blocks_dir) %in% target]
 blocks_dir <- 'G:/Block_18/blocks/N'
-blocks_dir <- 'I:/NZ_2023/Cass/ULS_Subset'
+blocks_dir <- 'I:/NZ_2023/Cass/ULS'
 
 ################################################################################
 # START BUTTON
@@ -60,7 +60,6 @@ blocks_dir <- 'I:/NZ_2023/Cass/ULS_Subset'
 for(i in 1:length(blocks_dir)){
 
 tictoc::tic()
-
 
 if(length(blocks_dir) == 1){
     i <- 1
@@ -271,6 +270,7 @@ if(normalize == TRUE){
 
 
 if(filter_normalize == T){
+  print(glue::glue('Filtering potential outliers from normalized tiles'))
   norm_dir <- glue::glue('{proj_dir}/input/las/norm')
   ctg_norm <- lidR::catalog(norm_dir)
   opt_output_files(ctg_norm) <- '{norm_dir}/{acq}_{XLEFT}_{YBOTTOM}_norm'
@@ -297,7 +297,7 @@ if(filter_normalize == T){
       return(res)
     }
   }
-  filter_noise(ctg_norm, tolerance = 1.2)
+  filter_noise(ctg_norm, sensitivity = 1.2)
   ctg_norm <- lidR::catalog(norm_dir)
   lidR:::catalog_laxindex(ctg_norm)
   print('Indexed normalized tiles...')
@@ -361,7 +361,7 @@ if (make_chm == TRUE) {
         glue::glue('{raster_output}/chm/tiles/{acq}_chm.vrt'),
         overwrite = T)
   #--- Remove extreme CHM values. Extreme points get 0 or 30 ---
-  chm <- terra::clamp(chm, 0, 30, values = TRUE)
+  #chm <- terra::clamp(chm, 0, 30, values = TRUE)
   #--- Set layer name to Z ---
   names(chm) <- 'Z'
   # ----- Fill CHM -----
