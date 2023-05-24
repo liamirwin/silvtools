@@ -10,18 +10,23 @@ library(terra)
 library(terra)
 library(stringr)
 library(geometry) # Required for rumple metrics
-
+library(silvtools)
 # ---- Processing switches ----
+
+# Set Switches via ShinyApp
+
+configure_las_process()
+
 # ULS or DAP?
 is_dap <- FALSE
 # Run in parallel?
 run_parallel <- T
 num_cores <- 2L
 # Tile area?
-make_tile <- T
+make_tile <- F
 # Tile size (m)
 tile_size <- 10
-chunk_buf <- 5
+chunk_buf <- 10
 # Classify ground points?
 ground_classify <- F
 # Normalize points?
@@ -30,19 +35,19 @@ normalize <- F
 filter_normalize <- F
 # Create DSM?
 make_dsm <- F
-dsm_res <- 0.25
+dsm_res <- 0.05
 # Create CHM?
 make_chm <- F
-chm_res <- 0.25
+chm_res <- 0.05
 # Create DTM?
 make_dtm <- F
-dtm_res <- 0.25
+dtm_res <- 0.05
 # Calculate Metrics?
-make_mets <- F
+make_mets <- T
 met_res <- 1
 # Is ALS?
 is_als <- F
-is_mls <- F
+is_mls <- T
 # List directories (each is one acquisiton of ULS/DAP)
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these blocks from processing stream
@@ -52,6 +57,8 @@ blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 # blocks_dir <- blocks_dir[basename(blocks_dir) %in% target]
 blocks_dir <- 'G:/Block_18/blocks/N'
 blocks_dir <- 'I:/NZ_2023/Cass/ULS'
+blocks_dir <- 'G:/Scantiques_Roadshow/Sites/BC/Vaseux Lake/Vaseux_2017'
+blocks_dir <- list.dirs('I:/NZ_2023/Cass/MLS/plots', recursive = FALSE)
 
 ################################################################################
 # START BUTTON
@@ -92,6 +99,10 @@ if(stringr::str_detect(basename(proj_dir), pattern = 'DAP') | is_dap){
 if(is_als){
   acq <- paste0('ALS_', stringr::str_replace(basename(proj_dir), pattern = "-DAP", replacement = ""))
   print(paste0('Set acqusition type as lidar (ALS) named ', acq))
+}
+if(is_mls){
+  acq <- paste0('MLS_', stringr::str_replace(basename(proj_dir), pattern = "-DAP", replacement = ""))
+  print(paste0('Set acqusition type as lidar (MLS) named ', acq))
 }
 
 # ---- Initialize Parallel Processing ----
@@ -203,10 +214,18 @@ if(make_dtm == TRUE){
     print(glue::glue('Created a directory for DTM tiles {raster_output}/dtm/tiles'))
   }
   opt_output_files(ctg_class) <-
-    '{raster_output}/dtm/tiles/{acq}_chm_{dtm_res}_{XLEFT}_{YBOTTOM}'
+    '{raster_output}/dtm/tiles/{acq}_dtm_{dtm_res}_{XLEFT}_{YBOTTOM}'
   ctg_class@output_options$drivers$SpatRaster$param$overwrite <-
     TRUE
-  rasterize_terrain(ctg_class, res = dtm_res, algorithm = tin())
+
+  if(is_mls){
+  dtm_algorithm <- knnidw()
+  } else{
+   dtm_algorithm <- tin()
+  }
+
+  rasterize_terrain(ctg_class, res = dtm_res, algorithm = dtm_algorithm)
+
   #--- Load DTM Tiles as virtual raster dataset ---
   dtm_tiles <-
     list.files(glue::glue('{raster_output}/dtm/tiles/'),

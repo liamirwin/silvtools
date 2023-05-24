@@ -47,7 +47,7 @@ create_animation <- function(proj_dir,
       date_time_formatted <- as.POSIXct(date_time_formatted, format = "%Y-%m-%d %H:%M")
       # Annotate image with date and time label
       image_list[[i]] <- magick::image_annotate(image_list[[i]], date_time_formatted, color = 'red', boxcolor = 'white',
-                                                location = "+10+10", size = 50, font = "Arial", weight = 500,
+                                                location = "+10+10", size = 25, font = "Arial", weight = 500,
                                                 gravity = "northwest")
       print(paste0(i, '/', length(image_list), ' images annotated'))
     }

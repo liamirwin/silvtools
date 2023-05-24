@@ -25,11 +25,11 @@ solar_simulator <- function(dsm_file,
                             proj_dir,
                             site_name,
                             aoi_file = NULL,
-                            sun_pos){
-
+                            sun_pos,
+                            num_cores = NULL){
+  # Determine Simulation Start Time
   sim_start <- Sys.time()
   # Load DSM raster and crop if aoi provided (useful for testing/benchmarking)
-
   if (!is.null(aoi_file)) {
     if ('sf' %in% class(aoi_file)) {
       aoi <- aoi_file
@@ -61,12 +61,34 @@ solar_simulator <- function(dsm_file,
 
     print(glue::glue('Beginning rayshading for timepoint {timepoint$date_posixct} ({k}/{nrow(sun_pos)}) for {site_name}'))
 
+    if(is.null(num_cores)){
+      num_cores = 1
+    }
+
+    if(num_cores > 1){
+      run_parallel = TRUE
+      options(cores = num_cores)
+      print(glue::glue('{num_cores} enabled for parallel processing'))
+    } else{
+      run_parallel = FALSE
+    }
+
+
+    if(num_cores > 1){
+      run_parallel = TRUE
+    } else{
+      run_parallel = FALSE
+    }
+
+    zscale = terra::res(dsm)[1]
+
     rshade= rayshader::ray_shade(
       rasM,
       sunaltitude = zenith,
       sunangle = azimuth,
-      zscale = 0.05,
-      progbar = interactive())
+      zscale = zscale,
+      progbar = FALSE,
+      multicore = run_parallel)
 
     rshade <- t(rshade)
     rshade<-rshade[,c(ncol(rshade):1),drop = FALSE]
