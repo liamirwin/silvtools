@@ -62,12 +62,16 @@ configure_las_process <- function() {
   server <- function(input, output, session) {
     options <- reactive({
       list(
-        is_dap = input$dap, run_parallel = input$parallel, num_cores = as.numeric(input$cores), make_tile = input$tile,
-        tile_size = as.numeric(input$tile_size), chunk_buf = as.numeric(input$chunk_buf), ground_classify = input$ground_classify,
-        normalize = input$normalize, filter_normalize = input$filter_normalize, make_dsm = input$dsm,
-        dsm_res = as.numeric(input$dsm_res), make_chm = input$chm, chm_res = as.numeric(input$chm_res),
-        make_dtm = input$dtm, dtm_res = as.numeric(input$dtm_res), make_mets = input$mets,
-        met_res = as.numeric(input$met_res), is_als = input$is_als, is_mls = input$is_mls
+        is_dap = as.logical(input$dap), run_parallel = as.logical(input$parallel),
+        num_cores = as.numeric(input$cores), make_tile = as.logical(input$tile),
+        tile_size = as.numeric(input$tile_size), chunk_buf = as.numeric(input$chunk_buf),
+        ground_classify = as.logical(input$ground_classify), normalize = as.logical(input$normalize),
+        filter_normalize = as.logical(input$filter_normalize), make_dsm = as.logical(input$dsm),
+        dsm_res = as.numeric(input$dsm_res), make_chm = as.logical(input$chm),
+        chm_res = as.numeric(input$chm_res), make_dtm = as.logical(input$dtm),
+        dtm_res = as.numeric(input$dtm_res), make_mets = as.logical(input$mets),
+        met_res = as.numeric(input$met_res), is_als = as.logical(input$is_als),
+        is_mls = as.logical(input$is_mls)
       )
     })
 

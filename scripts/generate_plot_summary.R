@@ -11,7 +11,7 @@ library(terra)
 library(tmap)
 library(plotly)
 library(silvtools)
-
+library(lidR)
 # ---- Processing Setup ----
 plots_dir <- 'G:/Quesnel_2022/plot_summary/plots'
 process_dir <- 'G:/Quesnel_2022/process'
@@ -641,6 +641,7 @@ ttops_ws1 <- do.call(rbind, ttops_list)
 # Output lists for matching and plotting
 matches <- list()
 tmap_plots <- list()
+chm_radius <- 10
 # Loop over all directories
 for(i in 1:length(blocks_dir)){
 
@@ -762,7 +763,7 @@ for(i in 1:length(blocks_dir)){
 matches_df <- do.call(rbind, matches)
 matches_df <- matches_df %>% filter(!is.na(TreeNum))
 
-core_trees <- matches_df %>% dplyr::filter(!is.na(mean_bai_5))
+core_trees <- matches_df %>% dplyr::filter(!is.na(mean_bai_5) & !is.na(vol_concave))
 ct_sf <- st_as_sf(core_trees, coords = c('X','Y'),crs = 26910)
 st_crs(ct_sf)
 # False Negative Matches with Core Trees?

@@ -23,24 +23,24 @@ is_dap <- FALSE
 run_parallel <- T
 num_cores <- 2L
 # Tile area?
-make_tile <- F
+make_tile <- T
 # Tile size (m)
 tile_size <- 10
 chunk_buf <- 10
 # Classify ground points?
-ground_classify <- F
+ground_classify <- T
 # Normalize points?
-normalize <- F
+normalize <- T
 # Filter out outlier normalized returns?
 filter_normalize <- F
 # Create DSM?
-make_dsm <- F
+make_dsm <- T
 dsm_res <- 0.05
 # Create CHM?
-make_chm <- F
+make_chm <- T
 chm_res <- 0.05
 # Create DTM?
-make_dtm <- F
+make_dtm <- T
 dtm_res <- 0.05
 # Calculate Metrics?
 make_mets <- T
@@ -59,7 +59,8 @@ blocks_dir <- 'G:/Block_18/blocks/N'
 blocks_dir <- 'I:/NZ_2023/Cass/ULS'
 blocks_dir <- 'G:/Scantiques_Roadshow/Sites/BC/Vaseux Lake/Vaseux_2017'
 blocks_dir <- list.dirs('I:/NZ_2023/Cass/MLS/plots', recursive = FALSE)
-
+processed <- c('PLOT_1','PLOT_2','PLOT_3', 'PLOT_4')
+blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 ################################################################################
 # START BUTTON
 ################################################################################
