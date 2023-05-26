@@ -17,13 +17,15 @@ library(jtools)
 library(sjPlot)
 library(sjmisc)
 library(sjlabelled)
-
-
+library(ggpmisc)
+library(patchwork)
+library(ggrepel)
 
 model_df <- read.csv('G:/Quesnel_2022/Modelling/core_trees.csv')
 
+model_df <- model_df %>% filter(!(tree_id.x %in% c('CT5P3-Pl040','CT5P2-Fd027', 'CT1P2-Sx044', 'CT5P2-Fd047')))
 
-plot_relationship <- function(df, xvar, yvar, groupvar=NULL, xlab=NULL, ylab=NULL) {
+plot_relationship <- function(df, xvar, yvar, groupvar=NULL, xlab=NULL, ylab=NULL, label = F) {
   # Create scatter plot with line of fit for each group in groupvar
   xlab <- ifelse(is.null(xlab), xvar, xlab)
   ylab <- ifelse(is.null(ylab), yvar, ylab)
@@ -42,6 +44,11 @@ plot_relationship <- function(df, xvar, yvar, groupvar=NULL, xlab=NULL, ylab=NUL
             legend.title = element_text(size=12), # Change legend title text size
             legend.text = element_text(size=12) # Change legend text size
       )
+    if(label == T){
+             p <- p +
+                 geom_text_repel(aes(label=tree_id.x))
+    }
+
   } else {
     p <- ggplot(df, aes_string(x=xvar, y=yvar, color=groupvar)) +
       geom_point(size = 3) +
@@ -56,6 +63,10 @@ plot_relationship <- function(df, xvar, yvar, groupvar=NULL, xlab=NULL, ylab=NUL
             legend.title = element_text(size=12), # Change legend title text size
             legend.text = element_text(size=12) # Change legend text size
       )
+    if(label == T){
+      p <- p +
+        geom_text_repel(aes(label=tree_id.x))
+    }
   }
 
   return(p)
@@ -65,7 +76,7 @@ p1 <- plot_relationship(model_df,
                         'log(vol_concave)',
                         "log(sum_bai_5)",
                         xlab = 'Crown Volume (Log)',
-                        ylab = 'BAI (5 Year) (Log)')
+                        ylab = 'BAI (5 Year) (Log)', label = F)
 
 p2 <- plot_relationship(model_df,
                   'log(vol_concave)',
@@ -75,11 +86,24 @@ p2 <- plot_relationship(model_df,
                   ylab = 'BAI (5 Year) (Log)')
 
 
+p3 <- plot_relationship(model_df,
+                        'RCC_mean',
+                        "BCC_mean",
+                        "Species",
+                        xlab = 'Mean Red Chromatic Coordinate',
+                        ylab = 'Mean Blue Chromatic Coordinate')
+
+p4 <- plot_relationship(model_df,
+                        'RCC_mean',
+                        "BCC_mean",
+                        "Species",
+                        xlab = 'Mean Red Chromatic Coordinate',
+                        ylab = 'Mean Blue Chromatic Coordinate')
+
+
 p1 + p2
 
-
-model_df <- model_df %>% filter()
-
+model_df <- model_df %>% rename(PlotID = PlotID.x)
 
 # Model 1: simple no plot effect - BAI vs volume
 
@@ -190,7 +214,7 @@ mod_all = lm( formula = log(sum_bai_5) ~
 
 # Conv to dataframe
 
-dd = dredge(mod_all) %>%
+dd = dredge(mod_all) %>% as.data.frame() %>%
   tibble::rownames_to_column()
 
 lmerTest::lmer(log(sum_bai_5) ~ log(vol_concave) + Zmax + (1|PlotID), data = model_df) %>% summ()
@@ -237,3 +261,34 @@ x <- model_df$sum_bai_10
 
 
 summary_stats(x)
+
+
+# Perform PCA
+chroma_df <- model_df[,c("RCC_mean", "GCC_mean", "BCC_mean")]
+prin_comp <- prcomp(chroma_df, center = TRUE, scale. = TRUE, rank. = 3)
+
+
+components <- prin_comp[["x"]]
+components <- data.frame(components)
+components$PC2 <- -components$PC2
+components$PC3 <- -components$PC3
+components = cbind(components, model_df$Species) %>% rename(RCC = PC1, BCC = PC2, GCC = PC3)
+
+
+
+tot_explained_variance_ratio <- summary(prin_comp)[["importance"]]['Proportion of Variance',]
+tot_explained_variance_ratio <- 100 * sum(tot_explained_variance_ratio)
+
+tit = 'PCA of Plot Trees By Species'
+
+fig <- plot_ly(components, x = ~RCC, y = ~GCC, z = ~BCC, color = ~model_df$Species, colors = c('#EF553B','#00CC96','#636EFA') ) %>%
+  add_markers(size = 12)
+
+
+fig <- fig %>%
+  layout(
+    title = tit,
+    scene = list(bgcolor = NA)
+  )
+
+fig

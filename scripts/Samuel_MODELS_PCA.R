@@ -1177,7 +1177,7 @@ dd = dredge(mod_all) %>%
 
 ### simple
 dd_simple = dd %>%
-  subset((has('vol_convex', 'lag:vol_convex'))) %>%
+  subset((MuMIn::has('vol_convex', 'lag:vol_convex'))) %>%
   subset(df == 4)
 
 # Best model with 3, 4, 5; compare models with similar levels of complexity(DF can be used to subset models with less varibles)

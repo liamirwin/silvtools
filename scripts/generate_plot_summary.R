@@ -748,7 +748,7 @@ for(i in 1:length(blocks_dir)){
   tree_las <- apply_treeid_to_las(plot_las, plot_crowns)
   print('Applied crown tree IDs to plot las')
 
-  plot_ashapes <- get_alphashape_metrics(tree_las)
+  plot_ashapes <- get_alphashape_metrics(tree_las, RGB = TRUE)
   plot_ashape_ttops <- merge(plot_ttops, plot_ashapes, by = 'treeID')
   # Perform tree matching and score results
   matches[[i]] <- tree_matching(plot_stems, plot_ashape_ttops, plot_name)
