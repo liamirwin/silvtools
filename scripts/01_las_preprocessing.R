@@ -61,6 +61,7 @@ blocks_dir <- 'G:/Scantiques_Roadshow/Sites/BC/Vaseux Lake/Vaseux_2017'
 blocks_dir <- list.dirs('I:/NZ_2023/Cass/MLS/plots', recursive = FALSE)
 processed <- c('PLOT_1','PLOT_2','PLOT_3', 'PLOT_4')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
+
 ################################################################################
 # START BUTTON
 ################################################################################
@@ -192,7 +193,8 @@ if (ground_classify == TRUE) {
       iterations = 500L,
       time_step = 0.65))
     }else{
-    ctg_class <- lidR::classify_ground(ctg_tile, csf(class_threshold = 0.25, cloth_resolution = 0.25, rigidness = 2))
+    ctg_class <-
+
     }
   lidR:::catalog_laxindex(ctg_class)
   print(glue::glue('Ground classification process for {acq} complete'))

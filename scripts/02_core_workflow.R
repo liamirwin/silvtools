@@ -10,7 +10,6 @@ November 15 2022
 #---- Packages ----
 
 library(tidyverse)
-library(MtreeRing)
 library(dplR)
 library(sf)
 library(terra)
@@ -61,7 +60,7 @@ rwl_width <- rwl_df %>% rownames_to_column(var = "year") %>%
   pivot_longer(cols = !year, names_to = 'core_id', values_to = 'ring.width') %>% filter(!is.na(ring.width))
 
 core_id_df <- read.csv('tree_rings/core_label_guide_2023.csv') %>% select(old_code, code) %>% rename(core_id = code, tree_id = old_code)
-
+core_id_df <- read.csv('F:/Quesnel_2022/Dendrochronology/tree_rings/quesnel_core_list_2023.csv')
 rwl_width <- merge(rwl_width, core_id_df, by = 'core_id')
 
 # Merge BAI and widths for each core, each year (long format)

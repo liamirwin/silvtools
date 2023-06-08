@@ -34,7 +34,7 @@ extract_twi = T
 # Generate Pairwise competition index?
 generate_heygi <- T
 # Generate Area Potentially Avaliable Index
-generate_apa <- F
+generate_apa <- T
 # Use manually adjusted maxima
 use_manual_maxima <- T
 
@@ -262,18 +262,19 @@ for(i in 1:length(blocks_dir)){
   if(generate_heygi == TRUE){
 
     heygi_ttops <- heygi_cindex(plot_ttops, comp_input = comp_input, maxR = maxR) %>%
-      st_drop_geometry() %>%
-      select(cindex, treeID) %>% filter(!is.na(treeID))
+      st_drop_geometry() %>% select(cindex, treeID)
 
+    heygi_ttops$treeID <- plot_ttops$treeID
     plot_ttops <- merge(plot_ttops, heygi_ttops, by = 'treeID')
-
 
   }
 
   if(generate_apa == TRUE){
     apa_ttops <- apa_cindex(plot_ttops, comp_input = comp_input) %>%
       st_drop_geometry() %>%
-      select(aindex, afree, treeID) %>% filter(!is.na(treeID))
+      select(aindex, afree, treeID)
+
+    apa_ttops$treeID <- plot_ttops$treeID
 
     plot_ttops <- merge(plot_ttops, apa_ttops, by = 'treeID')
 
@@ -281,10 +282,16 @@ for(i in 1:length(blocks_dir)){
 
 
   # Perform tree matching and score results
-  matches[[i]] <- tree_matching(plot_stems, plot_ashape_ttops, plot_name)
+  matches[[i]] <- tree_matching(plot_stems, plot_ttops, plot_name)
   score <- tree_matching_scores(matches[[i]]) %>% mutate(PlotID = plot_name)
 
   # Return the score
   score
 
 }
+
+
+matches_df <- do.call(rbind, matches)
+matches_df <- matches_df %>% filter(!is.na(TreeNum))
+
+core_trees <- matches_df %>% dplyr::filter(!is.na(mean_bai_5))

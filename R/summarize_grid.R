@@ -8,7 +8,7 @@
 #' @param grid_shape The shape of the grid, either 'square' or 'hexagon' (default is 'square').
 #' @param summary_var The name of the variable to summarize (default is 'cindex').
 #' @param summary_fun The summary function to apply (default is 'mean').
-#'
+#' @param count_trees Logical argument to count tree tops per cell or not (default is false)
 #' @return An SF object with the same CRS as the input data, containing the summarized variable for each grid cell.
 #' @export
 #'
@@ -32,7 +32,8 @@
 #' print(result)
 #' }
 summarize_grid <- function(points_sf, grid_area = 400, grid_shape = 'square',
-                           summary_var = 'cindex', summary_fun = 'mean') {
+                           summary_var = 'cindex', summary_fun = 'mean',
+                           count_trees = FALSE) {
 
   # Set cell size based on grid_area and grid_shape
   if (grid_shape == 'square') {
@@ -65,6 +66,7 @@ summarize_grid <- function(points_sf, grid_area = 400, grid_shape = 'square',
   summaries <- points_sf %>%
     group_by(grid_id) %>%
     summarize(across(all_of(summary_var), match.fun(summary_fun), .names = paste0(summary_fun, "_", summary_var)),
+              n_trees = if(count_trees) n() else NULL,
               .groups = 'drop') %>% sf::st_drop_geometry()
 
   # Convert grid to sf data frame and add id column
