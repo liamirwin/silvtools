@@ -21,11 +21,11 @@ configure_las_process()
 is_dap <- FALSE
 # Run in parallel?
 run_parallel <- T
-num_cores <- 2L
+num_cores <- 4L
 # Tile area?
 make_tile <- T
 # Tile size (m)
-tile_size <- 10
+tile_size <- 250
 chunk_buf <- 10
 # Classify ground points?
 ground_classify <- T
@@ -35,19 +35,20 @@ normalize <- T
 filter_normalize <- F
 # Create DSM?
 make_dsm <- T
-dsm_res <- 0.05
+dsm_res <- 0.10
 # Create CHM?
 make_chm <- T
-chm_res <- 0.05
+chm_res <- 0.10
+subcircle <- 0.025
 # Create DTM?
 make_dtm <- T
-dtm_res <- 0.05
+dtm_res <- 0.10
 # Calculate Metrics?
 make_mets <- T
 met_res <- 1
 # Is ALS?
 is_als <- F
-is_mls <- T
+is_mls <- F
 # List directories (each is one acquisiton of ULS/DAP)
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these blocks from processing stream
@@ -61,6 +62,9 @@ blocks_dir <- 'G:/Scantiques_Roadshow/Sites/BC/Vaseux Lake/Vaseux_2017'
 blocks_dir <- list.dirs('I:/NZ_2023/Cass/MLS/plots', recursive = FALSE)
 processed <- c('PLOT_1','PLOT_2','PLOT_3', 'PLOT_4')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
+blocks_dir <- "D:/scantiques_roadshow/Processing/12_Block18_N"
+
+setup_als_dirs(blocks_dir)
 
 ################################################################################
 # START BUTTON
@@ -193,7 +197,7 @@ if (ground_classify == TRUE) {
       iterations = 500L,
       time_step = 0.65))
     }else{
-    ctg_class <-
+    ctg_class <- lidR::classify_ground(ctg_tile, csf(class_threshold = 0.25, cloth_resolution = 0.25, rigidness = 2))
 
     }
   lidR:::catalog_laxindex(ctg_class)
