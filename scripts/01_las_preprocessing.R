@@ -128,7 +128,7 @@ if(make_tile == TRUE){
   print(glue::glue('Raw {acq} point cloud contains {density(ctg_tile) * sf::st_area(ctg_tile)} points at {round(density(ctg_tile))} pts/m2'))
   # Processing options
   opt_chunk_size(ctg_tile) <- tile_size
-  opt_chunk_buffer(ctg_tile) <- 0
+  opt_chunk_buffer(ctg_tile) <- 0g
   opt_progress(ctg_tile) <- T
   opt_laz_compression(ctg_tile) <- T
   tile_dir <- glue::glue('{proj_dir}/input/las/tile')
