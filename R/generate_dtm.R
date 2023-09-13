@@ -85,5 +85,5 @@ generate_dtm <- function(proj_dir, dtm_res, num_cores = 1L, chunk_buf = NULL, dt
 
   print(glue::glue("DTM generation process complete for {acq}"))
 
-  return(dtm_smooth) # Return the smoothed DTM as a SpatRaster
+  return(dtm) # Return the DTM as a SpatRaster
 }
