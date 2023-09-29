@@ -23,7 +23,7 @@ is_dap <- FALSE
 run_parallel <- T
 num_cores <- 4L
 # Tile area?
-make_tile <- T
+make_tile <- F
 # Tile size (m)
 tile_size <- 250
 chunk_buf <- 10
@@ -42,13 +42,14 @@ chm_res <- 0.10
 subcircle <- 0.025
 # Create DTM?
 make_dtm <- T
-dtm_res <- 0.10
+dtm_res <- 0.25
 # Calculate Metrics?
 make_mets <- T
 met_res <- 1
 # Is ALS?
 is_als <- F
 is_mls <- F
+mcc <- FALSE
 # List directories (each is one acquisiton of ULS/DAP)
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these blocks from processing stream
@@ -63,6 +64,9 @@ blocks_dir <- list.dirs('I:/NZ_2023/Cass/MLS/plots', recursive = FALSE)
 processed <- c('PLOT_1','PLOT_2','PLOT_3', 'PLOT_4')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 blocks_dir <- "D:/scantiques_roadshow/Processing/12_Block18_N"
+
+
+blocks_dir <- 'D:/L1_2023'
 
 setup_als_dirs(blocks_dir)
 
@@ -99,7 +103,7 @@ if(stringr::str_detect(basename(proj_dir), pattern = 'DAP') | is_dap){
 } else{
   is_dap = FALSE
   # Set acquisition name (ULSYY_blockname)
-  acq <- paste0('ULS23_',basename(proj_dir))
+  acq <- paste0('DLS_',basename(proj_dir))
   print(paste0('Set acqusition type as lidar (ULS) named ', acq))
 }
 if(is_als){
@@ -128,7 +132,7 @@ if(make_tile == TRUE){
   print(glue::glue('Raw {acq} point cloud contains {density(ctg_tile) * sf::st_area(ctg_tile)} points at {round(density(ctg_tile))} pts/m2'))
   # Processing options
   opt_chunk_size(ctg_tile) <- tile_size
-  opt_chunk_buffer(ctg_tile) <- 0g
+  opt_chunk_buffer(ctg_tile) <- 0
   opt_progress(ctg_tile) <- T
   opt_laz_compression(ctg_tile) <- T
   tile_dir <- glue::glue('{proj_dir}/input/las/tile')
@@ -167,37 +171,60 @@ if (ground_classify == TRUE) {
     dir.create(class_dir, recursive = T)
     print(glue::glue('Created a directory for classified laz files at {class_dir}'))
   }
-  if(is_dap){
-    las <- readLAS(ctg_tile[1,])
-    if('confidence' %in% names(las)){
-    opt_filter(ctg_tile) = "-keep_random_fraction 0.01 -keep_attribute_above 0 2"
-    print(glue::glue('Confidence attribute detected in DAP point cloud; filtering high confidence points for ground classification'))
+  if (is_dap) {
+    las <- readLAS(ctg_tile[1, ])
+    if ('confidence' %in% names(las)) {
+      opt_filter(ctg_tile) = "-keep_random_fraction 0.01 -keep_attribute_above 0 2"
+      print(
+        glue::glue(
+          'Confidence attribute detected in DAP point cloud; filtering high confidence points for ground classification'
+        )
+      )
     } else{
-    opt_filter(ctg_tile) = "-keep_random_fraction 0.01"
-    print(glue::glue('No confidence attribute detected in DAP point cloud'))
+      opt_filter(ctg_tile) = "-keep_random_fraction 0.01"
+      print(glue::glue('No confidence attribute detected in DAP point cloud'))
     }
-    ctg_class <- classify_ground(ctg_tile, algorithm = csf(
-      sloop_smooth = FALSE,
-      class_threshold = 0.07,
-      # larger resolution = coarser DTM
-      cloth_resolution = .7,
-      rigidness = 2L,
-      # even for non flat sites, this should be 3L in my experience
-      iterations = 500L,
-      time_step = 0.65))
-  } else if(is_mls == TRUE){
+    ctg_class <- classify_ground(
+      ctg_tile,
+      algorithm = csf(
+        sloop_smooth = FALSE,
+        class_threshold = 0.07,
+        # larger resolution = coarser DTM
+        cloth_resolution = .7,
+        rigidness = 2L,
+        # even for non flat sites, this should be 3L in my experience
+        iterations = 500L,
+        time_step = 0.65
+      )
+    )
+
+  } else if (is_mls == TRUE) {
     opt_filter(ctg_tile) = "-keep_random_fraction 0.01"
-    ctg_class <- classify_ground(ctg_tile, algorithm = csf(
-      sloop_smooth = FALSE,
-      class_threshold = 0.07,
-      # larger resolution = coarser DTM
-      cloth_resolution = .7,
-      rigidness = 2L,
-      # even for non flat sites, this should be 3L in my experience
-      iterations = 500L,
-      time_step = 0.65))
-    }else{
-    ctg_class <- lidR::classify_ground(ctg_tile, csf(class_threshold = 0.25, cloth_resolution = 0.25, rigidness = 2))
+    ctg_class <- classify_ground(
+      ctg_tile,
+      algorithm = csf(
+        sloop_smooth = FALSE,
+        class_threshold = 0.07,
+        # larger resolution = coarser DTM
+        cloth_resolution = .7,
+        rigidness = 2L,
+        # even for non flat sites, this should be 3L in my experience
+        iterations = 500L,
+        time_step = 0.65
+      )
+    )
+  } else if (mcc == TRUE) {
+    print(glue::glue('Performing Ground Classification with Mulitscale Curvature Classification Algorithm...'))
+    classify_ground(ctg_tile, mcc(s = 0.05, t = 0.05)) #t = 1/square(500)
+  }
+    else{
+      ctg_class <-
+        lidR::classify_ground(ctg_tile,
+                              csf(
+                                class_threshold = 0.05,
+                                cloth_resolution = 0.25,
+                                rigidness = 2
+                              ))
 
     }
   lidR:::catalog_laxindex(ctg_class)
@@ -289,6 +316,7 @@ if(normalize == TRUE){
   ctg_norm <- lidR::normalize_height(ctg_class, tin())
   }
   if(filter_normalize == F){
+  print(glue::glue('Generating .lax index file for each normalized tile...'))
   lidR:::catalog_laxindex(ctg_norm)
   print('Indexed normalized tiles...')
   }
@@ -325,6 +353,7 @@ if(filter_normalize == T){
   }
   filter_noise(ctg_norm, sensitivity = 1.2)
   ctg_norm <- lidR::catalog(norm_dir)
+  print(glue::glue('Generating .lax index file for each normalized tile...'))
   lidR:::catalog_laxindex(ctg_norm)
   print('Indexed normalized tiles...')
 }
