@@ -36,6 +36,7 @@ heygi_cindex <- function(ttops, comp_input = 'vol_convex', maxR = 6){
     siplab::pairwise(., maxR=maxR, kernel=siplab::powers_ker,
                      kerpar=list(pi=1, pj=1, pr=1, smark=1))
 
+
   # Join new cindex with original ttops
 
   trees_cindex <- heygi %>%

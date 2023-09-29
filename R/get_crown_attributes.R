@@ -1,14 +1,18 @@
 #' Calculate crown attributes for a set of tree points
 #'
 #' This function calculates various crown attributes for a set of 3D tree points including:
-#' crown height (Zmax, Zq999, Zq99, Z_mean), crown size (n_points, vol_convex, vol_concave, vol_a05), and crown complexity (CV_Z, CRR)
+#' crown height (Zmax, Zq999, Zq99, Z_mean), crown size (n_points, vol_convex, vol_concave), crown complexity (CV_Z, CRR), and
+#' relative chromatic coordinates (RCC, GCC, BCC).
 #'
 #' @param X Numeric vector, x-coordinates of tree points
 #' @param Y Numeric vector, y-coordinates of tree points
 #' @param Z Numeric vector, z-coordinates of tree points
-#' @param pb progress bar object, used for progress tracking (optional)
+#' @param R Numeric vector, red channel of tree points (optional)
+#' @param G Numeric vector, green channel of tree points (optional)
+#' @param B Numeric vector, blue channel of tree points (optional)
 #'
-#' @return A data frame with columns for each crown attribute
+#' @return A data frame with columns for each crown attribute. If color channels (R, G, B) are provided,
+#'         the data frame will also include the mean and median of the relative chromatic coordinates (RCC, GCC, BCC).
 #'
 #' @examples
 #' \dontrun{
@@ -16,8 +20,7 @@
 #' }
 #'
 #' @export
-#'
-get_crown_attributes <- function(X,Y,Z,pb = NULL){
+get_crown_attributes <- function(X,Y,Z, R = NULL, G = NULL, B = NULL){
   if (length(X) <= 3 || length(Y) <= 3 || length(Z) <= 3) {
     print('Cannot compute a 3D hull from 3 or fewer points')
     return(NULL)
@@ -31,7 +34,7 @@ get_crown_attributes <- function(X,Y,Z,pb = NULL){
   a3d[,1] = a3d[,1] - mean(a3d[,1]) #center points around 0,0,0
   a3d[,2] = a3d[,2] - mean(a3d[,2]) #center points around 0,0,0
   alpha <- c(Inf, 1)
-  ashape <- alphashape3d::ashape3d(x = a3d, alpha = alpha)
+  ashape <- alphashape3d::ashape3d(x = a3d, alpha = alpha, pert = TRUE)
   # Return Number Distribution Metrics (function of crown transparency)
   # if(length(Z) == length(ReturnNumber)){
   # ZRN = cbind(Z, ReturnNumber)
@@ -45,6 +48,7 @@ get_crown_attributes <- function(X,Y,Z,pb = NULL){
   #   print('Return Number and Z length not equal...')
   # }
   # calculate crown metrics
+
   df <- data.frame(
     # Crown height
     Zmax = max(Z),
@@ -70,8 +74,20 @@ get_crown_attributes <- function(X,Y,Z,pb = NULL){
     # Append georeferenced tree top coordinates
     X = top_x,
     Y = top_y)
-  if(!is.null(pb)){
-  pb$tick()
+
+  # Check if R, G, B are not NULL
+  if (!is.null(R) && !is.null(G) && !is.null(B)) {
+    # Compute chromatic coordinates
+    RCC = R / (R + G + B)
+    GCC = G / (R + G + B)
+    BCC = B / (R + G + B)
+    # Add chromatic coordinates stats to the data frame
+    df$RCC_mean = mean(RCC, na.rm = TRUE)
+    df$GCC_mean = mean(GCC, na.rm = TRUE)
+    df$BCC_mean = mean(BCC, na.rm = TRUE)
+    df$RCC_median = median(RCC, na.rm = TRUE)
+    df$GCC_median = median(GCC, na.rm = TRUE)
+    df$BCC_median = median(BCC, na.rm = TRUE)
   }
   return(df)
 }

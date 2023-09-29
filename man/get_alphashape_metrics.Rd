@@ -4,12 +4,10 @@
 \alias{get_alphashape_metrics}
 \title{Convert LAS file to Alphashape and compute crown metrics}
 \usage{
-get_alphashape_metrics(chunk, prog_bar = TRUE)
+get_alphashape_metrics(chunk)
 }
 \arguments{
 \item{chunk}{an object of class LAS or a catalog chunk which has points attributed with treeID values, typically computed from lidR::segment_trees.}
-
-\item{prog_bar}{logical. Indicates whether to display a progress bar for the computation (defaults to TRUE).}
 }
 \value{
 A data frame with columns treeID, X, Y, Zmax, Zq999, Zq99, Z_mean, n_points, vol_convex, vol_concave, vol_a05, CV_Z, CRR.

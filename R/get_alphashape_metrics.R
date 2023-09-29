@@ -4,8 +4,6 @@
 #' Crown metrics such as X, Y, Zmax, Zq999, Zq99, Z_mean, n_points, vol_convex, vol_concave, vol_a05, CV_Z, and CRR are then computed for each tree.
 #'
 #' @param chunk an object of class LAS or a catalog chunk which has points attributed with treeID values, typically computed from lidR::segment_trees.
-#' @param prog_bar logical. Indicates whether to display a progress bar for the computation (defaults to TRUE).
-#'
 #' @return A data frame with columns treeID, X, Y, Zmax, Zq999, Zq99, Z_mean, n_points, vol_convex, vol_concave, vol_a05, CV_Z, CRR.
 #'
 #' @examples
@@ -18,7 +16,7 @@
 #' ashape_df <- get_alphashape_metrics(tree_las, prog_bar = TRUE)
 #' }
 #' @export
-get_alphashape_metrics <- function(chunk, prog_bar = TRUE){
+get_alphashape_metrics <- function(chunk, RGB = FALSE){
 
 if ("LAS" %in% class(chunk)) {
     tree_las <- chunk
@@ -29,35 +27,46 @@ tree_las <- lidR::readLAS(chunk)
 
 if (is.empty(tree_las)) return(NULL)
 
-if(prog_bar){
-pb <- progress::progress_bar$new(
-    format = "Generating crown metrics (:percent )| :elapsed elapsed | :eta eta",
-    total = length(na.omit(unique((tree_las@data$treeID)))),
-    width = 60)
-} else{
-  pb = NULL
-}
-
 print(glue::glue('Beginning crown metric generation for chunk'))
+
 tree_las <- lidR::filter_duplicates(tree_las)
 
-obs <- tree_las@data %>%
-  dplyr::filter(!is.na(treeID)) %>%
-  dplyr::select(X,Y,Z,treeID) %>%
-  dplyr::group_by(treeID) %>%
-  dplyr::summarise(n = dplyr::n()) %>% dplyr::ungroup() %>% dplyr::filter(n <= 4)
+
+if(RGB){
+  obs <- tree_las@data %>%
+    dplyr::filter(!is.na(treeID)) %>%
+    dplyr::select(X,Y,Z,R,G,B,treeID) %>%
+    dplyr::group_by(treeID) %>%
+    dplyr::summarise(n = dplyr::n()) %>% dplyr::ungroup() %>% dplyr::filter(n <= 4)
+}
+else{
+  obs <- tree_las@data %>%
+    dplyr::filter(!is.na(treeID)) %>%
+    dplyr::select(X,Y,Z,treeID) %>%
+    dplyr::group_by(treeID) %>%
+    dplyr::summarise(n = dplyr::n()) %>% dplyr::ungroup() %>% dplyr::filter(n <= 4)
+}
 
 if(nrow(obs) > 0){
 print(glue::glue('{nrow(obs)} treeIDs had 4 or fewer points and were discarded'))
 }
 
+if(RGB){
 mets <- tree_las@data %>%
   dplyr::filter(!is.na(treeID)) %>%
   dplyr::filter(!treeID %in% obs$treeID) %>%
-  dplyr::select(X,Y,Z,treeID) %>%
+  dplyr::select(X,Y,Z,R,G,B,treeID) %>%
   dplyr::group_by(treeID) %>%
-  dplyr::summarise(ashape_metrics = get_crown_attributes(X, Y, Z, pb))
-
+  dplyr::summarise(ashape_metrics = get_crown_attributes(X, Y, Z, R, G, B))
+}
+else{
+  mets <- tree_las@data %>%
+    dplyr::filter(!is.na(treeID)) %>%
+    dplyr::filter(!treeID %in% obs$treeID) %>%
+    dplyr::select(X,Y,Z,treeID) %>%
+    dplyr::group_by(treeID) %>%
+    dplyr::summarise(ashape_metrics = get_crown_attributes(X, Y, Z))
+}
 mets <- cbind(mets$treeID, mets$ashape_metrics)
 
 colnames(mets)[1] <- "treeID"

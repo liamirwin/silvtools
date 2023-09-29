@@ -44,6 +44,9 @@ plot_outlier_distribution <- function(data, metric, percentiles = c(1, 2, 90, 95
     # Apply a minimal theme to the plot
     theme_minimal()
 
+  names(annot_df) <- c(metric, 'quantile')
+  print(annot_df)
+
   return(plot)
 }
 

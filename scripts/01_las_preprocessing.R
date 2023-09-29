@@ -10,15 +10,20 @@ library(terra)
 library(terra)
 library(stringr)
 library(geometry) # Required for rumple metrics
-
+library(silvtools)
 # ---- Processing switches ----
+
+# Set Switches via ShinyApp
+
+configure_las_process()
+
 # ULS or DAP?
 is_dap <- FALSE
 # Run in parallel?
 run_parallel <- T
 num_cores <- 4L
 # Tile area?
-make_tile <- T
+make_tile <- F
 # Tile size (m)
 tile_size <- 250
 chunk_buf <- 10
@@ -26,40 +31,56 @@ chunk_buf <- 10
 ground_classify <- T
 # Normalize points?
 normalize <- T
+# Filter out outlier normalized returns?
+filter_normalize <- F
 # Create DSM?
 make_dsm <- T
 dsm_res <- 0.10
 # Create CHM?
-make_chm <- TRUE
+make_chm <- T
 chm_res <- 0.10
+subcircle <- 0.025
 # Create DTM?
 make_dtm <- T
-dtm_res <- 0.10
+dtm_res <- 0.25
 # Calculate Metrics?
 make_mets <- T
 met_res <- 1
 # Is ALS?
 is_als <- F
 is_mls <- F
+mcc <- FALSE
 # List directories (each is one acquisiton of ULS/DAP)
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these blocks from processing stream
-processed <- c('CT1','CT2','CT3','CT4','CT5')
+processed <- c('CT1','CT2','CT3','CT4','CT5', 'CT1-T-DAP', 'CT1-DAP')
 # target <- c('CT1')
 blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 # blocks_dir <- blocks_dir[basename(blocks_dir) %in% target]
-blocks_dir <- 'D:/Silva21/AGM_2023/oak_island'
-blocks_dir <- 'F:/Quesnel_2022/GeoSLAM/plot_las/CT1P2'
-blocks_dir <- 'D:/riccarton_bush'
-blocks_dir <- 'Y:/Irwin/NZ_2023/Campbell/Campbell_ULS'
-blocks_dir <- 'H:/Cass_ULS'
+blocks_dir <- 'G:/Block_18/blocks/N'
+blocks_dir <- 'I:/NZ_2023/Cass/ULS'
+blocks_dir <- 'G:/Scantiques_Roadshow/Sites/BC/Vaseux Lake/Vaseux_2017'
+blocks_dir <- list.dirs('I:/NZ_2023/Cass/MLS/plots', recursive = FALSE)
+processed <- c('PLOT_1','PLOT_2','PLOT_3', 'PLOT_4')
+blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
+blocks_dir <- "D:/scantiques_roadshow/Processing/12_Block18_N"
+
+
+blocks_dir <- 'D:/L1_2023'
+
+setup_als_dirs(blocks_dir)
+
 ################################################################################
 # START BUTTON
 ################################################################################
 
 for(i in 1:length(blocks_dir)){
 
-  tictoc::tic()
+tictoc::tic()
+
+if(length(blocks_dir) == 1){
+    i <- 1
+}
 
 proj_dir <- blocks_dir[i]
 
@@ -69,7 +90,7 @@ raster_output <- glue::glue('{proj_dir}/output/raster')
 vector_output <- glue::glue('{proj_dir}/output/vector')
 
 
-if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
+if(stringr::str_detect(basename(proj_dir), pattern = 'DAP') | is_dap){
   is_dap = TRUE
   # Set acquisition name (DAPYY_blockname)
   acq <- paste0('DAP22_', stringr::str_replace(basename(proj_dir), pattern = "-DAP", replacement = ""))
@@ -82,12 +103,16 @@ if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
 } else{
   is_dap = FALSE
   # Set acquisition name (ULSYY_blockname)
-  acq <- paste0('ULS23_',basename(proj_dir))
+  acq <- paste0('DLS_',basename(proj_dir))
   print(paste0('Set acqusition type as lidar (ULS) named ', acq))
 }
 if(is_als){
   acq <- paste0('ALS_', stringr::str_replace(basename(proj_dir), pattern = "-DAP", replacement = ""))
   print(paste0('Set acqusition type as lidar (ALS) named ', acq))
+}
+if(is_mls){
+  acq <- paste0('MLS_', stringr::str_replace(basename(proj_dir), pattern = "-DAP", replacement = ""))
+  print(paste0('Set acqusition type as lidar (MLS) named ', acq))
 }
 
 # ---- Initialize Parallel Processing ----
@@ -122,6 +147,9 @@ if(make_tile == TRUE){
   print(glue::glue('Beginning tiling process for {acq} at {tile_size}m'))
   ctg_tile <- catalog_retile(ctg_tile)
   print(glue::glue('Tiling process complete for {acq} {nrow(ctg_tile)} {tile_size}m tiles created'))
+  # Index Tiles
+  lidR:::catalog_laxindex(ctg_tile)
+  print(glue::glue('Indexing of tiles for {acq} {nrow(ctg_tile)} {tile_size}m complete'))
   tictoc::toc()
 }
 
@@ -143,31 +171,63 @@ if (ground_classify == TRUE) {
     dir.create(class_dir, recursive = T)
     print(glue::glue('Created a directory for classified laz files at {class_dir}'))
   }
-  if(is_dap){
-    opt_filter(ctg_tile) = "-keep_random_fraction 0.01 -keep_attribute_above 0 2"
-    ctg_class <- classify_ground(ctg_tile, algorithm = csf(
-      sloop_smooth = FALSE,
-      class_threshold = 0.07,
-      # larger resolution = coarser DTM
-      cloth_resolution = .7,
-      rigidness = 2L,
-      # even for non flat sites, this should be 3L in my experience
-      iterations = 500L,
-      time_step = 0.65))
-  } else if(is_mls == TRUE){
+  if (is_dap) {
+    las <- readLAS(ctg_tile[1, ])
+    if ('confidence' %in% names(las)) {
+      opt_filter(ctg_tile) = "-keep_random_fraction 0.01 -keep_attribute_above 0 2"
+      print(
+        glue::glue(
+          'Confidence attribute detected in DAP point cloud; filtering high confidence points for ground classification'
+        )
+      )
+    } else{
+      opt_filter(ctg_tile) = "-keep_random_fraction 0.01"
+      print(glue::glue('No confidence attribute detected in DAP point cloud'))
+    }
+    ctg_class <- classify_ground(
+      ctg_tile,
+      algorithm = csf(
+        sloop_smooth = FALSE,
+        class_threshold = 0.07,
+        # larger resolution = coarser DTM
+        cloth_resolution = .7,
+        rigidness = 2L,
+        # even for non flat sites, this should be 3L in my experience
+        iterations = 500L,
+        time_step = 0.65
+      )
+    )
+
+  } else if (is_mls == TRUE) {
     opt_filter(ctg_tile) = "-keep_random_fraction 0.01"
-    ctg_class <- classify_ground(ctg_tile, algorithm = csf(
-      sloop_smooth = FALSE,
-      class_threshold = 0.07,
-      # larger resolution = coarser DTM
-      cloth_resolution = .7,
-      rigidness = 2L,
-      # even for non flat sites, this should be 3L in my experience
-      iterations = 500L,
-      time_step = 0.65))
-    }else{
-    ctg_class <- lidR::classify_ground(ctg_tile, csf(class_threshold = 0.25, cloth_resolution = 0.25, rigidness = 2))
+    ctg_class <- classify_ground(
+      ctg_tile,
+      algorithm = csf(
+        sloop_smooth = FALSE,
+        class_threshold = 0.07,
+        # larger resolution = coarser DTM
+        cloth_resolution = .7,
+        rigidness = 2L,
+        # even for non flat sites, this should be 3L in my experience
+        iterations = 500L,
+        time_step = 0.65
+      )
+    )
+  } else if (mcc == TRUE) {
+    print(glue::glue('Performing Ground Classification with Mulitscale Curvature Classification Algorithm...'))
+    classify_ground(ctg_tile, mcc(s = 0.05, t = 0.05)) #t = 1/square(500)
   }
+    else{
+      ctg_class <-
+        lidR::classify_ground(ctg_tile,
+                              csf(
+                                class_threshold = 0.05,
+                                cloth_resolution = 0.25,
+                                rigidness = 2
+                              ))
+
+    }
+  lidR:::catalog_laxindex(ctg_class)
   print(glue::glue('Ground classification process for {acq} complete'))
 }
 
@@ -188,17 +248,25 @@ if(make_dtm == TRUE){
     print(glue::glue('Created a directory for DTM tiles {raster_output}/dtm/tiles'))
   }
   opt_output_files(ctg_class) <-
-    '{raster_output}/dtm/tiles/{acq}_chm_{dtm_res}_{XLEFT}_{YBOTTOM}'
+    '{raster_output}/dtm/tiles/{acq}_dtm_{dtm_res}_{XLEFT}_{YBOTTOM}'
   ctg_class@output_options$drivers$SpatRaster$param$overwrite <-
     TRUE
-  rasterize_terrain(ctg_class, res = dtm_res, algorithm = tin())
+
+  if(is_mls){
+  dtm_algorithm <- knnidw()
+  } else{
+   dtm_algorithm <- tin()
+  }
+
+  rasterize_terrain(ctg_class, res = dtm_res, algorithm = dtm_algorithm)
+
   #--- Load DTM Tiles as virtual raster dataset ---
   dtm_tiles <-
     list.files(glue::glue('{raster_output}/dtm/tiles/'),
                pattern = '.tif$',
                full.names = T)
   dtm <-
-    vrt(dtm_tiles,
+    terra::vrt(dtm_tiles,
         glue::glue('{raster_output}/dtm/tiles/{acq}_dtm.vrt'),
         overwrite = T)
 
@@ -247,9 +315,48 @@ if(normalize == TRUE){
   # Normalize point cloud
   ctg_norm <- lidR::normalize_height(ctg_class, tin())
   }
+  if(filter_normalize == F){
+  print(glue::glue('Generating .lax index file for each normalized tile...'))
+  lidR:::catalog_laxindex(ctg_norm)
+  print('Indexed normalized tiles...')
+  }
 }
 
 
+if(filter_normalize == T){
+  print(glue::glue('Filtering potential outliers from normalized tiles'))
+  norm_dir <- glue::glue('{proj_dir}/input/las/norm')
+  ctg_norm <- lidR::catalog(norm_dir)
+  opt_output_files(ctg_norm) <- '{norm_dir}/{acq}_{XLEFT}_{YBOTTOM}_norm'
+  opt_filter(ctg_norm)       <- "-drop_z_below 0"
+  opt_chunk_buffer(ctg_norm) <- chunk_buf
+  opt_laz_compression(ctg_norm) <- T
+  opt_progress(ctg_norm) <- T
+  # Removes outliers in by calculating the 95th percentile
+  # of height in 10x10m pixels, and filtering out points above the 95th percentile plus 20%
+  filter_noise = function(las, sensitivity)
+  {
+    if (is(las, "LAS"))
+    {
+      p95 <- pixel_metrics(las, ~quantile(Z, probs = 0.95), 10)
+      las <- merge_spatial(las, p95, "p95")
+      las <- filter_poi(las, Z < p95*sensitivity)
+      las$p95 <- NULL
+      return(las)
+    }
+
+    if (is(las, "LAScatalog"))
+    {
+      res <- catalog_map(las, filter_noise, sensitivity = sensitivity)
+      return(res)
+    }
+  }
+  filter_noise(ctg_norm, sensitivity = 1.2)
+  ctg_norm <- lidR::catalog(norm_dir)
+  print(glue::glue('Generating .lax index file for each normalized tile...'))
+  lidR:::catalog_laxindex(ctg_norm)
+  print('Indexed normalized tiles...')
+}
 
 # ---- Metrics -----
 
@@ -265,9 +372,15 @@ if(make_mets == TRUE){
   opt_select(ctg_norm) <- "xyz"
   opt_filter(ctg_norm) <- "-drop_withheld -drop_z_below 0"
   opt_progress(ctg_norm) <- T
+
+
+  # Basic metrics suite
+  # -------------------
+
   print(glue::glue('Generating basic metrics for {acq} at {met_res}m'))
   basic <- pixel_metrics(ctg_norm, ~lidRmetrics::metrics_basic(Z), res = met_res)
   terra::writeRaster(x = basic, filename = glue::glue('{raster_output}/metrics/{acq}_basic_{met_res}m.tif'), overwrite = TRUE)
+
 
 }
 
@@ -303,7 +416,7 @@ if (make_chm == TRUE) {
         glue::glue('{raster_output}/chm/tiles/{acq}_chm.vrt'),
         overwrite = T)
   #--- Remove extreme CHM values. Extreme points get 0 or 30 ---
-  chm <- terra::clamp(chm, 0, 30, values = TRUE)
+  #chm <- terra::clamp(chm, 0, 30, values = TRUE)
   #--- Set layer name to Z ---
   names(chm) <- 'Z'
   # ----- Fill CHM -----

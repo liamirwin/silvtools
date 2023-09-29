@@ -3,14 +3,16 @@ library(tidyverse)
 library(silvtools)
 library(sf)
 library(lidR)
-blocks <- list.dirs('H:/Quesnel_2022/blocks', recursive = FALSE)
-blocks <- blocks[c(1,4,7,8,9)]
-plot_bufs <- st_read('H:/Quesnel_2022/shp/ct_plot_20m_buffer.shp') #%>% filter(PlotID %in% plots) %>% st_buffer(dist = 10)
+blocks_dir <- list.dirs('G:/Quesnel_2022/blocks', recursive = FALSE)
+target <- c('CT4','CT5')
+blocks_dir <- blocks_dir[basename(blocks_dir) %in% target]
+
+plot_bufs <- st_read('G:/Quesnel_2022/shp/ct_plot_20m_buffer.shp') #%>% filter(PlotID %in% plots) %>% st_buffer(dist = 10)
 
 
 start_date <- as.POSIXct("2022-05-15 00:00:00", tz = "America/Los_Angeles")
 end_date <- as.POSIXct("2022-09-15 00:00:00", tz = "America/Los_Angeles")
-interval <- '10 min'
+interval <- '1 hour'
 lat <- 53.371759251761766
 lon <- -122.76808019195623
 
@@ -33,7 +35,7 @@ mean_irradiance(proj_dir = 'H:/Quesnel_2022/blocks/CT1', sitename = 'CT1P1')
 mean_irradiance(proj_dir = 'H:/Quesnel_2022/blocks/CT1', sitename = 'CT1P2')
 mean_irradiance(proj_dir = 'H:/Quesnel_2022/blocks/CT2', sitename = 'CT2P1')
 mean_irradiance(proj_dir = 'H:/Quesnel_2022/blocks/CT3', sitename = 'CT2P1')
-
+mean_irradiance(proj_dir = 'H:/Quesnel_2022/blocks/CT4', sitename = 'CT4P1')
 
 map_dir <- 'F:/Quesnel_2022/Quesnel_2022_PosTex/georeferenced_adjusted'
 stem_maps <- list.files(map_dir, pattern = 'shp$', full.names = T) %>%
@@ -46,6 +48,7 @@ cored_trees <- stem_maps %>% filter(Diametr > 0)
 plots <- unique(cored_trees$PlotID)
 plot_sf <- st_read('F:/Quesnel_2022/trimble_corrected/05_SHP/quesnel_2022_plots_utm10n.shp')
 plots <- plots[6:9]
+
 for(i in 1:length(plots)){
   plot <- plots[i]
   print(plot)

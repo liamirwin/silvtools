@@ -4,7 +4,14 @@
 \alias{solar_simulator}
 \title{Rayshading solar simulator function}
 \usage{
-solar_simulator(dsm_file, proj_dir, site_name, aoi_file = NULL, sun_pos)
+solar_simulator(
+  dsm_file,
+  proj_dir,
+  site_name,
+  aoi_file = NULL,
+  sun_pos,
+  num_cores = NULL
+)
 }
 \arguments{
 \item{dsm_file}{File path to DSM file of interest typically 'path/dsm.tif'}
