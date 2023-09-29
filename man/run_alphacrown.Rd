@@ -15,7 +15,13 @@ Simply input a folder containing individual tree las files and the app will allo
 }
 \examples{
 \dontrun{
+
 library(silvtools)
-silvtools::run_alphacrown()
+# Get the example dataset path
+example_data_path <- system.file("extdata", "individual_trees", package = "silvtools")
+
+# Launch the Shiny app with the example dataset
+run_alphacrown(example_data_path)
 }
+
 }

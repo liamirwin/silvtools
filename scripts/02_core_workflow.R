@@ -46,7 +46,7 @@ rwl_df <- dplR::combine.rwl(rwl_list)
 
 # Read RWL from CooRecorder
 
-rwl_df <- dplR::read.rwl('F:/Quesnel_2022/Dendrochronology/tree_rings/quesnel_cores_oct.rwl', format = "tucson")
+rwl_df <- dplR::read.rwl('C:/Users/lakirwin.stu/Documents/tree_rings/quesnel_cores_oct.rwl', format = "tucson")
 
 
 # Calculate basal area increment for each year
