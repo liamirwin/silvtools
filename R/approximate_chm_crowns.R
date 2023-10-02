@@ -16,7 +16,8 @@ segment_chm_crowns <- function(proj_dir,
                                raster_output = NULL,
                                crown_methods = c('fixed', 'auto', 'variable'),
                                crown_height_threshold = 0.25,
-                               vis = FALSE) {
+                               vis = FALSE,
+                               chm_ext = 'smooth') {
 
     tictoc::tic()
 
@@ -66,14 +67,14 @@ segment_chm_crowns <- function(proj_dir,
 
     chm <- terra::rast(select_file_path(chm_dir, pattern = chm_ext, ext = '.tif$'))
 
-    ttops_files <- list.files(glue::glue('{vector_output}/treetops'), pattern = '.gpkg', full.names = T)
+    ttops_files <- list.files(glue::glue('{vector_output}'), pattern = '.gpkg', full.names = T)
 
     # ---- Load Tree tops ----
 
     # Three different lmf methods lmf(ws = 2) lmfauto( ), variable ws lmf
     ttops_ws2 <- st_read(str_subset(ttops_files, pattern = 'ws2'), quiet = TRUE)
     ttops_auto <- st_read(str_subset(ttops_files, pattern = 'auto'), quiet = TRUE)
-    ttops_v <- st_read(str_subset(ttops_files, pattern = '_v_'), quiet = TRUE)
+    ttops_v <- st_read(str_subset(ttops_files, pattern = 'lmfv'), quiet = TRUE)
 
     print(glue::glue('Successfully loaded all sets of treetops for {acq}
                  lmfws2 = {nrow(ttops_ws2)} trees
