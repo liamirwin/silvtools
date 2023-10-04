@@ -12,6 +12,7 @@ library(tmap)
 library(plotly)
 library(silvtools)
 library(lidR)
+library(siplab)
 # ---- Processing Setup ----
 plots_dir <- 'G:/Quesnel_2022/plot_summary/plots'
 process_dir <- 'G:/Quesnel_2022/process'
@@ -28,15 +29,15 @@ plot_result <- FALSE
 # Should irradiance rasters be generated for each plot? - Takes some time
 generate_insol = FALSE
 # Extract and include solar irradiance?
-extract_insol = FALSE
+extract_insol = TRUE
 # Extract and include topographic wetness?
-extract_twi = FALSE
+extract_twi = TRUE
 # Generate Pairwise competition index?
-generate_heygi <- FALSE
+generate_heygi <- TRUE
 # Generate Area Potentially Avaliable Index
 generate_apa <- TRUE
 
-comp_input <- 'Zmax'
+comp_input <- 'vol_concave'
 maxR <- 6
 # Match Reference Stems with Closest Detected Treetops
 
@@ -63,7 +64,7 @@ for(i in 1:length(blocks_dir)){
 
   # Filter tree cores
   core_stems <- plot_stems %>% filter(!is.na(mean_bai_5))
-  print(glue::glue('Of the {nrow(plot_stems)} reference trees for {plot_name}, {nrow(core_stems)} had tree cores taken...'))
+  print(glue::glue('of the {nrow(plot_stems)} reference trees for {plot_name}, {nrow(core_stems)} had tree cores taken...'))
 
   # Load CHM, treetops and crowns files
   chm_file <- stringr::str_subset(list.files(glue::glue('{block_dir}/output/raster/chm'), pattern = '.tif$',full.names = T), pattern = 'fill')
@@ -314,7 +315,7 @@ create_scatter_plot <- function(data, x_var, y_var, title) {
 core_trees <- matches_df %>% dplyr::filter(!is.na(mean_bai_5) & !is.na(vol_concave))
 
 # Plotting the relationship between mean_bai_5 and vol_concave for different species
-create_scatter_plot(core_trees, "mean_bai_5", "vol_concave", "Species") %>% print()
+create_scatter_plot(core_trees, "sum_bai_5", "vol_concave", "Species") %>% print()
 
 # Plotting the relationship between mean_bai_5 and irr_mean for different species
 create_scatter_plot(core_trees, "mean_bai_5", "irr_mean", "Species") %>% print()
@@ -560,6 +561,7 @@ val_mods_prov = blups_mod %>%
 
 chm_radius <- 10
 ttops_list <- list()
+
 # Loop over all directories
 for(i in 1:length(blocks_dir)){
 
@@ -626,7 +628,7 @@ for(i in 1:length(blocks_dir)){
   ttops <- locate_trees(plot_chm, lmf(ws = 1, hmin = 5))
   ttops$PlotID <- plot_name
   plot(plot_chm)
-  plot(st_geometry(ttops_ws1),add = T)
+  plot(st_geometry(ttops),add = T)
 
   ttops_list[[i]] <- ttops
 
@@ -642,6 +644,7 @@ ttops_ws1 <- do.call(rbind, ttops_list)
 matches <- list()
 tmap_plots <- list()
 chm_radius <- 10
+
 # Loop over all directories
 for(i in 1:length(blocks_dir)){
 
@@ -748,7 +751,7 @@ for(i in 1:length(blocks_dir)){
   tree_las <- apply_treeid_to_las(plot_las, plot_crowns)
   print('Applied crown tree IDs to plot las')
 
-  plot_ashapes <- get_alphashape_metrics(tree_las, RGB = TRUE)
+  plot_ashapes <- get_alphashape_metrics(tree_las)
   plot_ashape_ttops <- merge(plot_ttops, plot_ashapes, by = 'treeID')
   # Perform tree matching and score results
   matches[[i]] <- tree_matching(plot_stems, plot_ashape_ttops, plot_name)
@@ -764,6 +767,9 @@ matches_df <- do.call(rbind, matches)
 matches_df <- matches_df %>% filter(!is.na(TreeNum))
 
 core_trees <- matches_df %>% dplyr::filter(!is.na(mean_bai_5) & !is.na(vol_concave))
+
+write.csv(st_drop_geometry(core_trees),'G:/Quesnel_2022/Modelling/core_trees_fix3.csv')
+
 ct_sf <- st_as_sf(core_trees, coords = c('X','Y'),crs = 26910)
 st_crs(ct_sf)
 # False Negative Matches with Core Trees?

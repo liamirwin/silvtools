@@ -40,12 +40,11 @@ heygi_cindex <- function(ttops, comp_input = 'vol_convex', maxR = 6){
   # Join new cindex with original ttops
 
   trees_cindex <- heygi %>%
-    as.data.frame() %>% dplyr::select(x, y, cindex) %>% sf::st_as_sf(coords = c('x', 'y'), crs = st_crs(ttops))
+    as.data.frame() %>% dplyr::select(x, y, cindex)
 
   ttops <- ttops %>% sf::st_as_sf(coords = c('X', 'Y'))
 
-  trees_cindex <- trees_cindex %>%
-    sf::st_join(., ttops)
+  trees_cindex <- dplyr::bind_cols(ttops, trees_cindex)
 
 
   print(glue::glue('Calculated Heygi style competition for {nrow(trees_cindex)} trees assesing their {comp_input} within a {maxR}m radius'))

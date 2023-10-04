@@ -39,7 +39,11 @@ summarize_grid <- function(points_sf, grid_area = 400, grid_shape = 'square',
   if (grid_shape == 'square') {
     cell_size <- sqrt(grid_area)
   } else if (grid_shape == 'hexagon') {
-    cell_size <- 2 * sqrt(grid_area / (3 * sqrt(3)))
+    # Calculate the edge length based on the given area
+    edge_length <- sqrt((2 * grid_area) / (3 * sqrt(3)))
+
+    # Calculate the cell size (distance between opposite edges)
+    cell_size <- edge_length * sqrt(3)
   } else {
     stop("Invalid grid_shape: must be 'square' or 'hexagon'")
   }

@@ -18,6 +18,7 @@ grid_area <- 2500
 grid_shape <- 'hexagon' # or 'square'
 plot_list <- list()
 grid_list <- list()
+
 for(i in 1:length(blocks_dir)){
 
   tictoc::tic()
@@ -197,7 +198,7 @@ ttops <- ttops_capped
 
 # Apply linear bai models and calculate growth competition ratios/normalize
 
-ttops <- ttops %>% mutate(log_sum_bai_5 = (5.65 + 0.73 * log(vol_concave)), sum_bai_5 = exp(log_sum_bai_5),
+ttops <- ttops %>% mutate(log_sum_bai_5 = (4.76 + 0.75 * log(vol_concave)), sum_bai_5 = exp(log_sum_bai_5),
                           norm_cindex = ((cindex - min(cindex))/(max(cindex) - min(cindex))),
                           norm_sum_bai_5 = ((sum_bai_5 - min(sum_bai_5))/(max(sum_bai_5) - min(sum_bai_5))),
                           GCR_sbai5 = norm_sum_bai_5/norm_cindex)
@@ -205,6 +206,7 @@ ttops <- ttops %>% mutate(log_sum_bai_5 = (5.65 + 0.73 * log(vol_concave)), sum_
 normalize <- function(x) { (x - min(x)) / (max(x) - min(x)) }
 ttops$G_C_difference <- normalize(ttops$sum_bai_5) - normalize(ttops$cindex)
 ttops$G_C_ratio <- normalize(ttops$sum_bai_5) / normalize(ttops$cindex)
+ttops$NDGCI <- (normalize(ttops$sum_bai_5) - normalize(ttops$cindex))/normalize(ttops$sum_bai_5) + normalize(ttops$cindex)
 ttops$G_C_ratio[is.infinite(ttops$G_C_ratio)] <- 1
 
 
@@ -230,11 +232,18 @@ ggplot(ttops, aes(x = cindex, y = sum_bai_5, color = G_C_score)) +
   labs(x = "Competition", y = "Growth", color = "Composite Score", title = "Growth vs Competition with Composite Score") +
   scale_color_gradient(low = "blue", high = "red")
 
+ggplot(ttops, aes(x = cindex, y = sum_bai_5, color = NDGCI)) +
+  geom_point() +
+  theme_minimal() +
+  labs(x = "Competition", y = "Growth", color = "Composite Score", title = "Growth vs Competition with Composite Score") +
+  scale_color_gradient(low = "blue", high = "red")
 
 
-bai_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'sum_bai_5', summary_fun = 'sum', count_trees = TRUE)
+
+bai_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'sum_bai_5', summary_fun = 'sum')
 cindex_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'cindex', summary_fun = 'sum')
-GCR_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'G_C_ratio', summary_fun = 'sum')
+sum_GCR_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'NDGCI', summary_fun = 'sum')
+mean_GCR_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'NDGCI', summary_fun = 'mean')
 
 grids <- st_join(bai_grid, cindex_grid, left = TRUE, largest = TRUE) %>% mutate(sum_sum_bai_5_m2 = sum_sum_bai_5/1000000)
 grids <- st_join(grids, GCR_grid, left = TRUE, largest = TRUE)
@@ -421,10 +430,9 @@ grid_list[[i]] <- grids
 
 }
 
-
-grids <- discard(grid_list, is.null)
+grids <- grid_list[sapply(grid_list, function(x) !is.null(x))]
+plots <- plot_list[sapply(grid_list, function(x) !is.null(x))]
 plots <- discard(plot_list, is.null)
-
 
 for(i in 1:length(plots)){
 
@@ -452,7 +460,9 @@ for(i in 1:length(grid_list)){
   print(grid_list[[i]])
 }
 
-}
+# Summarize values of grid cells across all five stands
+
+
 
 
 
@@ -464,10 +474,20 @@ ggplot(x, aes(x = bai_m2_per_ha, y = sum_cindex)) +
   ggtitle("Scatterplot of sum_sum_bai_5 vs sum_cindex")
 
 
-x <- grids[[1]] %>% mutate(area = st_area(geometry), bai_m2_per_ha = (sum_sum_bai_5_m2/5)/(as.numeric(area)/10000))
+x <- grid_list[[1]] %>% mutate(area = st_area(geometry), bai_m2_per_ha = (sum_sum_bai_5_m2/5)/(as.numeric(area)/10000))
 
 plot_bai <- ggplot() +
   geom_sf(data = x, aes(fill = cut(sum_sum_bai_5, breaks = bai_breaks)), color = "black", size = 0.1) +
+  scale_fill_manual(name = "Cumulative Basal\nArea of Last 5 Years (mm/5 yr)",
+                    values = colorRampPalette(c(alpha("white", 0.9), alpha("darkgreen", 0.9)), alpha = TRUE)(length(bai_breaks) - 1),
+                    labels = custom_labels(bai_breaks)) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal") +
+  coord_sf(crs = utm_crs)
+
+plot_bai <- ggplot() +
+  geom_sf(data = x, aes(fill = bai_m2_per_ha), color = "black", size = 0.1) +
   scale_fill_manual(name = "Cumulative Basal\nArea of Last 5 Years (mm/5 yr)",
                     values = colorRampPalette(c(alpha("white", 0.9), alpha("darkgreen", 0.9)), alpha = TRUE)(length(bai_breaks) - 1),
                     labels = custom_labels(bai_breaks)) +
@@ -487,14 +507,4 @@ ttops <- st_read('H:/Quesnel_2022/process/CT1-T-DAP/output/crowns/ashapes/DAP22_
 ttops <- st_read('H:/Quesnel_2022/process/CT1/output/crowns/ashapes/ULS22_CT1_heygi_ashapes.gpkg')
 ttops <- ttops %>% filter(vol_concave < 800) %>% filter(n_points > 100) %>% filter(n_points < 100000)
 
-ttops_attr <- ttops %>% mutate(mean_bai_5 = (369.924 + 3.676 * vol_concave), mean_bai_10 = (450.285 + 3.803 * vol_concave),
-                          sum_bai_5 = (4289.062 + 43.452 * vol_concave), sum_bai_10 = (9727.30 + 81.75 * vol_concave))
 
-
-hist(ttops_attr$n_points)
-
-x <- ttops_attr %>% select(mean_bai_5)
-ttops_attr2 <- st_read('H:/Quesnel_2022/process/CT1-T-DAP/output/crowns/CT1-T-DAP_ttops_attr_incomplete.gpkg')
-st_write(ttops_attr, 'H:/Quesnel_2022/process/CT1-T-DAP/output/crowns/ashapes/CT1-T-DAP_ttops_attr_incomplete_2.gpkg', append = FALSE)
-
-ttops_attrx <- rbind(ttops_attr, ttops_attr2)

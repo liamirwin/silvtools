@@ -1,3 +1,11 @@
+# Load required packages
+
+library(sf)
+library(tidyverse)
+library(gridExtra)
+library(silvtools)
+library(patchwork)
+
 # Internal Functions
 
 # Define function to detect acquisition type of a project
@@ -140,7 +148,7 @@ calculate_heygi_for_chunks <- function(chunks, df, buffer_distance = 10, comp_in
 # Calculate Linear BAI Models
 calculate_linear_bai_models <- function(treetops) {
   # Compute several new variables related to Basal Area Increment (BAI)
-  treetops <- treetops %>% mutate(log_sum_bai_5 = (5.65 + 0.73 * log(vol_concave)), sum_bai_5 = exp(log_sum_bai_5),
+  treetops <- treetops %>% mutate(log_sum_bai_5 = (4.75962 + 0.75351 * log(vol_concave)), sum_bai_5 = exp(log_sum_bai_5),
                                   norm_cindex = ((cindex - min(cindex))/(max(cindex) - min(cindex))),
                                   norm_sum_bai_5 = ((sum_bai_5 - min(sum_bai_5))/(max(sum_bai_5) - min(sum_bai_5))),
                                   GCR_sbai5 = norm_sum_bai_5/norm_cindex)
@@ -230,15 +238,23 @@ custom_labels <- function(breaks) {
 }
 
 
-create_plot <- function(data, fill_var, breaks, color_scale, scale_name, crs){
+create_plot <- function(data, fill_var, breaks, color_scale, scale_name, crs, decimal_places = 2) {
+  # Define a custom labeling function
+  custom_labels <- function(breaks) {
+    labels <- scales::label_number(big.mark = ",", accuracy = 10^(-decimal_places))
+    labels(breaks)
+  }
+
+
   plot <- ggplot() +
     geom_sf(data = data, aes_string(fill = paste0("cut(", fill_var, ", breaks = breaks)")), color = "black", size = 0.1) +
     scale_fill_manual(name = scale_name,
                       values = color_scale,
-                      labels = custom_labels(breaks)) +
+                      labels = custom_labels(breaks), drop = TRUE) +
     theme_minimal() +
     theme(legend.position = "bottom", legend.direction = "horizontal") +
     coord_sf(crs = crs)
+
   return(plot)
 }
 
@@ -259,6 +275,8 @@ metrics <- c('vol_concave','vol_convex')
 # Percentiles to cap values by
 upper_cutoff_percentile <- 99
 lower_cutoff_percentile <- 1
+
+
 # Area of summary grid tiles
 
 
@@ -301,14 +319,14 @@ ttops <- ttops %>%
 
 ttops$NDGCI <- calculate_ndgci(ttops$norm_sum_bai_5, ttops$norm_cindex)
 
-bai_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'sum_bai_5', summary_fun = 'sum', count_trees = TRUE)
+bai_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'sum_bai_5', summary_fun = 'sum')
 cindex_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'cindex', summary_fun = 'sum')
 NDGCI_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'NDGCI', summary_fun = 'sum')
 NDGCI__mean_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'NDGCI', summary_fun = 'mean')
 grids <- st_join(bai_grid, cindex_grid, left = TRUE, largest = TRUE) %>% mutate(sum_sum_bai_5_m2 = sum_sum_bai_5/1000000)
 grids <- st_join(grids, NDGCI_grid, left = TRUE, largest = TRUE)
 grids <- st_join(grids, NDGCI__mean_grid, left = TRUE, largest = TRUE)
-grids <- grids %>% select(-contains("id"))
+grids <- grids %>% dplyr::select(-contains("id"))
 
 
 if(clip_to_bdy){
@@ -326,7 +344,7 @@ grids <- grids %>%
          norm_diff = abs(norm_bai - norm_cindex))
 # Then take the geometric mean - useful for dealing with variables that are different orders of magnitude
 # High values = High Growth/Competition (Don't Thin)
-# Intermediate Value =
+# Intermediate Value = ???
 # Low Values = Low Growth/Competition (Don't Thin)
 grids <- grids %>%
   mutate(geom_mean_index = sqrt(norm_bai * norm_cindex),
@@ -337,21 +355,20 @@ return(grids)
 
 }
 
-ct1 <- generate_grid("G:/Quesnel_2022/process/CT1", clip_to_bdy = T, grid_area = 1000)
-ct2 <- generate_grid("G:/Quesnel_2022/process/CT2", clip_to_bdy = T, grid_area = 1000)
-ct3 <- generate_grid("G:/Quesnel_2022/process/CT3", clip_to_bdy = T, grid_area = 1000)
-ct4 <- generate_grid("G:/Quesnel_2022/process/CT4", clip_to_bdy = T, grid_area = 1000)
-ct5 <- generate_grid("G:/Quesnel_2022/process/CT5", clip_to_bdy = T, grid_area = 1000)
-
+ct1 <- generate_grid("G:/Quesnel_2022/process/CT1", clip_to_bdy = T, grid_area = 2500)
+ct2 <- generate_grid("G:/Quesnel_2022/process/CT2", clip_to_bdy = T, grid_area = 2500)
+ct3 <- generate_grid("G:/Quesnel_2022/process/CT3", clip_to_bdy = T, grid_area = 2500)
+ct4 <- generate_grid("G:/Quesnel_2022/process/CT4", clip_to_bdy = T, grid_area = 2500)
+ct5 <- generate_grid("G:/Quesnel_2022/process/CT5", clip_to_bdy = T, grid_area = 2500)
 
 utm_crs <- st_crs("+init=EPSG:26910")
 
-grids <- ct5
+grids <- ct1
 
 grids <- grids %>% mutate(area_ha = st_area(geometry)/10000, bai_m2_per_ha_5yr = sum_sum_bai_5_m2/area_ha, bai_m2_per_ha = bai_m2_per_ha_5yr/5)
 
 break_percentiles <- c(0, 10, 50, 75, 85, 95, 100)
-
+break_percentiles <- c(0, 10, 25, 50, 75, 90, 100)
 
 # Create a plot for sum_sum_bai_5
 bai_breaks <- percentile_breaks(grids$sum_sum_bai_5_m2, break_percentiles)
@@ -360,7 +377,8 @@ plot_bai <- create_plot(data = grids,
                         breaks = bai_breaks,
                         color_scale = colorRampPalette(c(alpha("white", 0.9), alpha("darkgreen", 0.9)), alpha = TRUE)(length(bai_breaks) - 1),
                         scale_name = "Cumulative Basal\nArea of Last 5 Years (m2/5 yr)",
-                        crs = utm_crs)
+                        crs = utm_crs,
+                        decimal_places = 2)
 
 # Create a plot for sum_cindex
 cindex_breaks <- percentile_breaks(grids$sum_cindex, break_percentiles)
@@ -369,27 +387,63 @@ plot_cindex <- create_plot(data = grids,
                            breaks = cindex_breaks,
                            color_scale = colorRampPalette(c("white", "darkred"))(length(cindex_breaks) - 1),
                            scale_name = "Cumulative Competition Index",
-                           crs = utm_crs)
+                           crs = utm_crs,
+                           decimal_places = 2)
 
 # Create a plot for diff_geom_mean_index
-dgindex_breaks <- percentile_breaks(grids$sum_NDGCI, break_percentiles)
+# dgindex_breaks <- percentile_breaks(grids$sum_NDGCI, break_percentiles)
+# color_scale_viridis <- viridisLite::viridis(length(dgindex_breaks) - 1)
+#
+# plot_ndgci <- create_plot(data = grids,
+#                           fill_var = "sum_NDGCI",
+#                           breaks = dgindex_breaks,
+#                           color_scale = color_scale_viridis,
+#                           scale_name = "Cumulative NDGCI",
+#                           crs = utm_crs,
+#                           decimal_places = 2)
+
+dgindex_breaks <- percentile_breaks(grids$mean_NDGCI, break_percentiles)
 color_scale_viridis <- viridisLite::viridis(length(dgindex_breaks) - 1)
 
-plot_index <- create_plot(data = grids,
-                          fill_var = "sum_NDGCI",
+plot_ndgci <- create_plot(data = grids,
+                          fill_var = "mean_NDGCI",
                           breaks = dgindex_breaks,
                           color_scale = color_scale_viridis,
-                          scale_name = "Cumulative NDGCI",
-                          crs = utm_crs)
+                          scale_name = "Mean NDGCI",
+                          crs = utm_crs,
+                          decimal_places = 2)
 
 
-# dgindex_breaks2 <- percentile_breaks(grids$mean_NDGCI, break_percentiles)
-# color_scale_viridis <- viridisLite::viridis(length(dgindex_breaks2) - 1)
-# plot_index2 <- create_plot(data = grids,
-#                           fill_var = "mean_NDGCI",
-#                           breaks = dgindex_breaks2,
-#                           color_scale = color_scale_viridis,
-#                           scale_name = "Mean NDGCI",
-#                           crs = utm_crs)
+plot_bai + plot_cindex + plot_ndgci
 
-plot_bai + plot_cindex + plot_index
+
+# Summary Metrics for Grids
+
+grid <- ct2
+
+calculate_summary_stats <- function(grid) {
+  # Calculate summary statistics for each column
+  summary_stats <- data.frame(
+    Variable = colnames(grid),
+    Mean = colMeans(grid, na.rm = TRUE),
+    StdDev = sapply(grid, sd, na.rm = TRUE),
+    Min = sapply(grid, min, na.rm = TRUE),
+    Max = sapply(grid, max, na.rm = TRUE)
+  )
+
+  return(summary_stats)
+}
+
+# Call the function with your grid
+grid_summary <- calculate_summary_stats(grid)
+
+# Call the function with your list of grids
+
+block_grids <- list(ct1, ct2, ct3, ct4, ct5)
+
+grids_all <- do.call(rbind, block_grids) %>% st_drop_geometry()
+
+grid_summary <- calculate_summary_stats(grids_all)
+
+write.csv(grid_summary, 'D:/Proposal_2022/Thinning Paper/Figures/grid_summary_stats.csv')
+
