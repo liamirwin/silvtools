@@ -28,7 +28,8 @@ approximate_chm_treetops <- function(proj_dir,
                               fix_ws = 2,
                               hmin = 2,
                               mod = 0.07,
-                              chm_ext = 'smooth') {
+                              chm_ext = 'smooth',
+                              save_output = FALSE) {
 
   tictoc::tic()
 
@@ -83,6 +84,46 @@ approximate_chm_treetops <- function(proj_dir,
     results$lmf_v <- locate_trees(chm, lmf(f, hmin = hmin), uniqueness = 'incremental')
     tictoc::toc()
   }
+
+
+  if (save_output == TRUE) {
+    if (is.null(vector_output)) {
+      vector_output <- glue::glue('{proj_dir}/output/vector')
+    }
+
+    dir.create(glue::glue('{proj_dir}/output/vector/ttops'),
+               showWarnings = FALSE)
+
+    if (fixed_window == TRUE) {
+      sf::st_write(
+        results$lmf_ws2,
+        dsn =  glue::glue(
+          '{proj_dir}/output/vector/ttops/{acq}_lmf_ws_{fix_ws}m.gpkg'
+        )
+      )
+      print(glue::glue(
+        'Wrote {nrow(results$lmf_ws2)} fixed window ({fix_ws}m) tree tops'
+      ))
+    }
+    if (auto_window == TRUE) {
+      sf::st_write(
+        results$lmf_auto,
+        dsn =  glue::glue('{proj_dir}/output/vector/ttops/{acq}_lmf_auto.gpkg')
+      )
+      print(glue::glue(
+        'Wrote {nrow(results$lmf_auto)} fixed window ({fix_ws}m) tree tops'
+      ))
+    }
+    if (variable_window == TRUE) {
+      sf::st_write(
+        results$lmf_v,
+        dsn =  glue::glue('{proj_dir}/output/vector/ttops/{acq}_lmf_v.gpkg')
+      )
+      print(glue::glue('Wrote {nrow(results$lmf_v)} variable window tree tops'))
+    }
+  }
+
+  print('Tree top detection complete...')
 
   return(results)
 }

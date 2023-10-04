@@ -23,7 +23,7 @@ is_dap <- FALSE
 run_parallel <- T
 num_cores <- 4L
 # Tile area?
-make_tile <- F
+make_tile <- T
 # Tile size (m)
 tile_size <- 250
 chunk_buf <- 10
@@ -66,7 +66,7 @@ blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 blocks_dir <- "D:/scantiques_roadshow/Processing/12_Block18_N"
 
 
-blocks_dir <- 'D:/L1_2023'
+blocks_dir <- 'G:/Ontario_2023/Block_18/NW'
 
 setup_als_dirs(blocks_dir)
 
