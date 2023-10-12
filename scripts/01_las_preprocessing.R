@@ -21,30 +21,30 @@ configure_las_process()
 is_dap <- FALSE
 # Run in parallel?
 run_parallel <- T
-num_cores <- 4L
+num_cores <- 6L
 # Tile area?
-make_tile <- T
+make_tile <- F
 # Tile size (m)
 tile_size <- 250
 chunk_buf <- 10
 # Classify ground points?
-ground_classify <- T
+ground_classify <- F
 # Normalize points?
-normalize <- T
+normalize <- F
 # Filter out outlier normalized returns?
 filter_normalize <- F
 # Create DSM?
-make_dsm <- T
+make_dsm <- F
 dsm_res <- 0.10
 # Create CHM?
 make_chm <- T
 chm_res <- 0.10
 subcircle <- 0.025
 # Create DTM?
-make_dtm <- T
+make_dtm <- F
 dtm_res <- 0.25
 # Calculate Metrics?
-make_mets <- T
+make_mets <- F
 met_res <- 1
 # Is ALS?
 is_als <- F
@@ -66,7 +66,7 @@ blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 blocks_dir <- "D:/scantiques_roadshow/Processing/12_Block18_N"
 
 
-blocks_dir <- 'G:/Ontario_2023/Block_18/NW'
+blocks_dir <- 'D:/Vaseux_Lake'
 
 setup_als_dirs(blocks_dir)
 
@@ -405,8 +405,8 @@ if (make_chm == TRUE) {
     TRUE
   rasterize_canopy(ctg_norm,
                    res = chm_res,
-                   algorithm = p2r(na.fill = knnidw()))
-  #--- Load CHM Tiles as virtual raster dataset ---
+                   algorithm = p2r(subcircle = subcircle, na.fill = knnidw()))
+  #--- Load CHM Tiles as virtual raster dataset
   chm_tiles <-
     list.files(glue::glue('{raster_output}/chm/tiles/'),
                pattern = '.tif',
@@ -447,7 +447,7 @@ if (make_chm == TRUE) {
   # ---- Write CHM ----
   print(glue::glue('Writing canopy height models for {acq} at {chm_res}m'))
   terra::writeRaster(chm,
-                     glue::glue('{raster_output}/chm/{acq}_chm_{chm_res}m_sub0_p2r.tif'),
+                     glue::glue('{raster_output}/chm/{acq}_chm_{chm_res}m_sub{round(subcircle * 100)}_p2r.tif'),
                      overwrite = T)
   terra::writeRaster(
     chm_filled,
