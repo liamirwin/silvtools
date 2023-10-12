@@ -15,6 +15,7 @@ segment_chm_crowns <- function(proj_dir,
                                vector_output = NULL,
                                raster_output = NULL,
                                crown_methods = c('fixed', 'auto', 'variable'),
+                               hmin = 1,
                                crown_height_threshold = 0.25,
                                vis = FALSE,
                                chm_ext = 'smooth') {
@@ -65,19 +66,19 @@ segment_chm_crowns <- function(proj_dir,
       stop(glue::glue("The specified CHM directory {chm_dir} does not exist."))
     }
 
-    chm <- terra::rast(select_file_path(chm_dir, pattern = chm_ext, ext = '.tif$'))
+    chm <- terra::rast(silvtools::select_file_path(chm_dir, pattern = chm_ext, ext = '.tif$'))
 
-    ttops_files <- list.files(glue::glue('{vector_output}'), pattern = '.gpkg', full.names = T)
+    ttops_files <- list.files(glue::glue('{vector_output}/treetops'), pattern = '.gpkg', full.names = T)
 
     # ---- Load Tree tops ----
 
     # Three different lmf methods lmf(ws = 2) lmfauto( ), variable ws lmf
-    ttops_ws2 <- st_read(str_subset(ttops_files, pattern = 'ws2'), quiet = TRUE)
+    ttops_ws <- st_read(str_subset(ttops_files, pattern = 'ws'), quiet = TRUE)
     ttops_auto <- st_read(str_subset(ttops_files, pattern = 'auto'), quiet = TRUE)
     ttops_v <- st_read(str_subset(ttops_files, pattern = 'lmfv'), quiet = TRUE)
 
     print(glue::glue('Successfully loaded all sets of treetops for {acq}
-                 lmfws2 = {nrow(ttops_ws2)} trees
+                 lmfws2 = {nrow(ttops_ws)} trees
                  lmfauto = {nrow(ttops_auto)} trees
                  lmfv = {nrow(ttops_v)}'))
 
@@ -85,22 +86,22 @@ segment_chm_crowns <- function(proj_dir,
 
     print(glue::glue('Begnning Crown Segmentation for {acq}'))
 
-    # lmf(ws = 2)
-    crowns <- silvtools::crown_mask(chunk = chm, ttops = ttops_ws2, crown_height_threshold = 0.25, vis = FALSE)
-    print('lmf(ws = 2) crown segmentation complete...')
+    # lmfws
+    crowns <- silvtools::crown_mask(chunk = chm, ttops = ttops_ws, hmin = hmin, crown_height_threshold = crown_height_threshold, vis = FALSE)
+    print('fixed ws lmf crown segmentation complete...')
     # lmfauto( )
-    crowns_auto <- silvtools::crown_mask(chunk = chm, ttops = ttops_auto, crown_height_threshold = 0.25, vis = FALSE)
+    crowns_auto <- silvtools::crown_mask(chunk = chm, ttops = ttops_auto, hmin = hmin, crown_height_threshold = crown_height_threshold, vis = FALSE)
     print('lmfauto( ) crown segmentation complete...')
     # lmfv()
-    crowns_v <- silvtools::crown_mask(chunk = chm, ttops = ttops_v, crown_height_threshold = 0.25, vis = FALSE)
+    crowns_v <- silvtools::crown_mask(chunk = chm, ttops = ttops_v, hmin = hmin, crown_height_threshold = crown_height_threshold, vis = FALSE)
     print('lmfv( ) crown segmentation complete...')
 
     # ---- Clean Crowns ----
 
     # Clean crowns, take largest polygon for each treeID; fill holes within crowns
 
-    print('Cleaning lmf(ws = 2) crowns...')
-    # lmf(ws = 2)
+    print('Cleaning fixed window size lmf crowns...')
+    # lmf ws
     crowns_p <- sf::st_as_sf(terra::as.polygons(crowns)) %>%
       convert_multi_to_single_polygons(polygons = ., fill_holes = TRUE)
 
@@ -121,15 +122,17 @@ segment_chm_crowns <- function(proj_dir,
 
     print(glue::glue('Segmentation process complete; attempting to write raster and vector crowns for {acq}'))
 
+    ct <- round(crown_height_threshold * 100)
+
     # Write lmf(ws = 2) crowns
-    terra::writeRaster(crowns, glue::glue('{raster_output}/crowns/{acq}_lmf_ws2_watershed_crowns.tif'), overwrite = T)
-    sf::st_write(crowns_p, glue::glue('{vector_output}/crowns/{acq}_lmf_ws2_watershed_crowns.shp'), append = FALSE)
+    terra::writeRaster(crowns, glue::glue('{raster_output}/crowns/{acq}_lmf_ws2_watershed_crowns_ct{ct}.tif'), overwrite = T)
+    sf::st_write(crowns_p, glue::glue('{vector_output}/crowns/{acq}_lmf_ws2_watershed_crowns_ct{ct}.shp'), append = FALSE)
     # Write lmfauto( ) crowns
-    terra::writeRaster(crowns_auto, glue::glue('{raster_output}/crowns/{acq}_lmf_auto_watershed_crowns.tif'), overwrite = T)
-    sf::st_write(crowns_auto_p, glue::glue('{vector_output}/crowns/{acq}_lmf_auto_watershed_crowns.shp'), append = FALSE)
+    terra::writeRaster(crowns_auto, glue::glue('{raster_output}/crowns/{acq}_lmf_auto_watershed_crowns_ct{ct}.tif'), overwrite = T)
+    sf::st_write(crowns_auto_p, glue::glue('{vector_output}/crowns/{acq}_lmf_auto_watershed_crowns_ct{ct}.shp'), append = FALSE)
     # Write lmfv( ) crowns
-    terra::writeRaster(crowns_v, glue::glue('{raster_output}/crowns/{acq}_lmf_v_watershed_crowns.tif'), overwrite = T)
-    sf::st_write(crowns_v_p, glue::glue('{vector_output}/crowns/{acq}_lmf_v_watershed_crowns.shp'), append = FALSE)
+    terra::writeRaster(crowns_v, glue::glue('{raster_output}/crowns/{acq}_lmf_v_watershed_crowns_ct{ct}.tif'), overwrite = T)
+    sf::st_write(crowns_v_p, glue::glue('{vector_output}/crowns/{acq}_lmf_v_watershed_crowns_ct{ct}.shp'), append = FALSE)
 
     print(glue::glue('Wrote crown rasters for {acq}'))
 

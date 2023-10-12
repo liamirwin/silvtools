@@ -98,7 +98,7 @@ approximate_chm_treetops <- function(proj_dir,
       sf::st_write(
         results$lmf_ws2,
         dsn =  glue::glue(
-          '{proj_dir}/output/vector/ttops/{acq}_lmf_ws_{fix_ws}m.gpkg'
+          '{proj_dir}/output/vector/ttops/{acq}_lmfws{fix_ws}m.gpkg'
         )
       )
       print(glue::glue(
@@ -108,7 +108,7 @@ approximate_chm_treetops <- function(proj_dir,
     if (auto_window == TRUE) {
       sf::st_write(
         results$lmf_auto,
-        dsn =  glue::glue('{proj_dir}/output/vector/ttops/{acq}_lmf_auto.gpkg')
+        dsn =  glue::glue('{proj_dir}/output/vector/ttops/{acq}_lmfauto.gpkg')
       )
       print(glue::glue(
         'Wrote {nrow(results$lmf_auto)} fixed window ({fix_ws}m) tree tops'
@@ -117,7 +117,7 @@ approximate_chm_treetops <- function(proj_dir,
     if (variable_window == TRUE) {
       sf::st_write(
         results$lmf_v,
-        dsn =  glue::glue('{proj_dir}/output/vector/ttops/{acq}_lmf_v.gpkg')
+        dsn =  glue::glue('{proj_dir}/output/vector/ttops/{acq}_lmfv.gpkg')
       )
       print(glue::glue('Wrote {nrow(results$lmf_v)} variable window tree tops'))
     }
