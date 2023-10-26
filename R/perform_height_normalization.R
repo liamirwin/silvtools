@@ -16,7 +16,7 @@ perform_height_normalization <- function(proj_dir,
                                          chunk_buf = NULL,
                                          tile_size = NULL,
                                          acq = NULL,
-                                         norm_algorithm = lidR::tin(),
+                                         norm_algorithm = 'tin',
                                          num_cores = 1L,
                                          index_tiles = TRUE,
                                          output_laz = TRUE) {
@@ -51,16 +51,27 @@ perform_height_normalization <- function(proj_dir,
   # Set options
   lidR::opt_progress(ctg_class) <- TRUE
   lidR::opt_chunk_buffer(ctg_class) <- chunk_buf
-
   norm_dir <- glue::glue("{proj_dir}/input/las/norm")
+
+  # Check if norm_dir exists, if not create it
+  if (!dir.exists(norm_dir)) {
+    dir.create(norm_dir, recursive = TRUE)
+  }
+
+  # Set Normalization Algorithm
+  if('tin' == norm_algorithm) {
+    algo <- lidR::tin()
+  }
+
+
   if (output_laz) {
-    lidR::opt_output_files(ctg_class) <- glue::glue("{norm_dir}/{acq}_{{XLEFT}}_{{YBOTTOM}}_class.laz")
+    lidR::opt_output_files(ctg_class) <- glue::glue("{norm_dir}/{acq}_{{XLEFT}}_{{YBOTTOM}}_norm_{norm_algorithm}")
   } else {
-    lidR::opt_output_files(ctg_class) <- glue::glue("{norm_dir}/{acq}_{{XLEFT}}_{{YBOTTOM}}_class.las")
+    lidR::opt_output_files(ctg_class) <- glue::glue("{norm_dir}/{acq}_{{XLEFT}}_{{YBOTTOM}}_norm_{norm_algorithm}")
   }
 
   # Normalize point cloud using specified algorithm
-  ctg_norm <- lidR::normalize_height(ctg_class, algorithm = norm_algorithm)
+  ctg_norm <- lidR::normalize_height(ctg_class, algorithm = algo)
 
   # Optionally index the normalized tiles
   if (index_tiles) {

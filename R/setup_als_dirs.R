@@ -30,13 +30,7 @@ setup_als_dirs <- function(proj_dir){
                                      'input/vector',
                                      'input/raster',
                                      'output/vector',
-                                     'output/raster',
-                                     'output/vector/treetops',
-                                     'output/vector/crowns',
-                                     'output/raster/crowns',
-                                     'output/raster/dtm',
-                                     'output/raster/chm',
-                                     'output/raster/metrics'))
+                                     'output/raster'))
 
   # Apply dir.create to generate standard folders
 

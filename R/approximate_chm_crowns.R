@@ -100,8 +100,8 @@ approximate_chm_crowns <- function(proj_dir,
       print('Converted fixed window crowns to polygons... cleaning them now')
       crowns_ws_p <- silvtools::convert_multi_to_single_polygons(polygons = crowns_ws_p, fill_holes = TRUE)
       # Save crowns
-      terra::writeRaster(crowns_ws, glue::glue('{raster_output}/crowns/{acq}_lmf_ws{window_size}_watershed_crowns_ct{ct}.tif'), overwrite = T)
-      sf::st_write(crowns_ws_p, glue::glue('{vector_output}/crowns/{acq}_lmf_ws{window_size}_watershed_crowns_ct{ct}.gpkg'), append = FALSE)
+      terra::writeRaster(crowns_ws, glue::glue('{raster_output}/crowns/{acq}_lmf_ws{window_size}_watershed_crowns_{chm_ext}_ct{ct}.tif'), overwrite = T)
+      sf::st_write(crowns_ws_p, glue::glue('{vector_output}/crowns/{acq}_lmf_ws{window_size}_watershed_crowns_{chm_ext}_ct{ct}.gpkg'), append = FALSE)
       print('fixed {window_size} m ws lmf crown segmentation complete...')
       tictoc::toc()
     } else {
@@ -122,8 +122,8 @@ approximate_chm_crowns <- function(proj_dir,
       print('Converted lmfauto crowns to polygons... cleaning them now')
       crowns_auto_p <- silvtools::convert_multi_to_single_polygons(polygons = crowns_auto_p, fill_holes = TRUE)
       # Save crowns
-      terra::writeRaster(crowns_auto, glue::glue('{raster_output}/crowns/{acq}_lmfauto_watershed_crowns_ct{ct}.tif'), overwrite = T)
-      sf::st_write(crowns_auto_p, glue::glue('{vector_output}/crowns/{acq}_lmfauto_watershed_crowns_ct{ct}.gpkg'), append = FALSE)
+      terra::writeRaster(crowns_auto, glue::glue('{raster_output}/crowns/{acq}_lmfauto_watershed_crowns_{chm_ext}_ct{ct}.tif'), overwrite = T)
+      sf::st_write(crowns_auto_p, glue::glue('{vector_output}/crowns/{acq}_lmfauto_watershed_crowns_{chm_ext}_ct{ct}.gpkg'), append = FALSE)
       print('lmfauto crown segmentation complete...')
       tictoc::toc()
       } else{
@@ -144,8 +144,8 @@ approximate_chm_crowns <- function(proj_dir,
       print('Converted lmfv crowns to polygons... cleaning them now')
       crowns_v_p <- silvtools::convert_multi_to_single_polygons(polygons = crowns_v_p, fill_holes = TRUE)
       # Save crowns
-      terra::writeRaster(crowns_v, glue::glue('{raster_output}/crowns/{acq}_lmfv_watershed_crowns_ct{ct}.tif'), overwrite = T)
-      sf::st_write(crowns_v_p, glue::glue('{vector_output}/crowns/{acq}_lmfv_watershed_crowns_ct{ct}.gpkg'), append = FALSE)
+      terra::writeRaster(crowns_v, glue::glue('{raster_output}/crowns/{acq}_lmfv_watershed_crowns_{chm_ext}_ct{ct}.tif'), overwrite = T)
+      sf::st_write(crowns_v_p, glue::glue('{vector_output}/crowns/{acq}_lmfv_watershed_crowns_{chm_ext}_ct{ct}.gpkg'), append = FALSE)
       print('lmfv crown segmentation complete...')
       tictoc::toc()
     } else {

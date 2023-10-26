@@ -29,8 +29,8 @@ approximate_chm_treetops <- function(proj_dir,
                               fix_ws = 2,
                               hmin = 2,
                               mod = 0.07,
-                              chm_ext = 'smooth',
-                              save_output = FALSE) {
+                              chm_ext = 'smooth_p2r',
+                              save_output = TRUE) {
 
   tictoc::tic()
 

@@ -21,11 +21,11 @@ configure_las_process()
 is_dap <- FALSE
 # Run in parallel?
 run_parallel <- T
-num_cores <- 3L
+num_cores <- 4L
 # Tile area?
-make_tile <- F
+make_tile <- T
 # Tile size (m)
-tile_size <- 250
+tile_size <- 500
 chunk_buf <- 10
 # Classify ground points?
 ground_classify <- F
@@ -35,19 +35,19 @@ normalize <- T
 filter_normalize <- F
 # Create DSM?
 make_dsm <- T
-dsm_res <- 0.10
+dsm_res <- 0.50
 # Create CHM?
 make_chm <- T
-chm_res <- 0.10
-subcircle <- 0.025
+chm_res <- 0.50
+subcircle <- 0.1
 # Create DTM?
 make_dtm <- T
-dtm_res <- 0.25
+dtm_res <- 0.50
 # Calculate Metrics?
 make_mets <- T
 met_res <- 1
 # Is ALS?
-is_als <- F
+is_als <- T
 is_mls <- F
 mcc <- FALSE
 # List directories (each is one acquisiton of ULS/DAP)
@@ -70,6 +70,8 @@ blocks_dir <- 'D:/Vaseux_Lake'
 blocks_dir <- 'G:/scantiques_roadshow/Vernon'
 blocks_dir <- 'F:/Jericho/Jericho_2022_LAS'
 blocks_dir <- 'Y:/Irwin/Kantelberg_MKRF_2023/sites/nelder_trial'
+blocks_dir <- 'G:/MMF/MMF_2016'
+
 setup_als_dirs(blocks_dir)
 
 ################################################################################
@@ -477,7 +479,7 @@ if (make_dsm == TRUE) {
     dir.create(glue::glue('{raster_output}/dsm'), showWarnings = FALSE)
     print(glue::glue('Created a directory for DSM {raster_output}/dsm'))
   }
-  ctg_class <- catalog(glue::glue('{proj_dir}/input/las/tile'))
+  ctg_class <- catalog(glue::glue('{proj_dir}/input/las/class'))
   opt_progress(ctg_class) <- T
   opt_chunk_buffer(ctg_class) <- chunk_buf
   dsm_res <- dsm_res
