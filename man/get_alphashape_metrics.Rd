@@ -4,7 +4,7 @@
 \alias{get_alphashape_metrics}
 \title{Convert LAS file to Alphashape and compute crown metrics}
 \usage{
-get_alphashape_metrics(chunk)
+get_alphashape_metrics(chunk, RGB = FALSE)
 }
 \arguments{
 \item{chunk}{an object of class LAS or a catalog chunk which has points attributed with treeID values, typically computed from lidR::segment_trees.}

@@ -9,7 +9,8 @@ summarize_grid(
   grid_area = 400,
   grid_shape = "square",
   summary_var = "cindex",
-  summary_fun = "mean"
+  summary_fun = "mean",
+  count_trees = FALSE
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ summarize_grid(
 \item{summary_var}{The name of the variable to summarize (default is 'cindex').}
 
 \item{summary_fun}{The summary function to apply (default is 'mean').}
+
+\item{count_trees}{Logical argument to count tree tops per cell or not (default is false)}
 }
 \value{
 An SF object with the same CRS as the input data, containing the summarized variable for each grid cell.

@@ -21,7 +21,7 @@ configure_las_process()
 is_dap <- FALSE
 # Run in parallel?
 run_parallel <- T
-num_cores <- 6L
+num_cores <- 3L
 # Tile area?
 make_tile <- F
 # Tile size (m)
@@ -30,21 +30,21 @@ chunk_buf <- 10
 # Classify ground points?
 ground_classify <- F
 # Normalize points?
-normalize <- F
+normalize <- T
 # Filter out outlier normalized returns?
 filter_normalize <- F
 # Create DSM?
-make_dsm <- F
+make_dsm <- T
 dsm_res <- 0.10
 # Create CHM?
 make_chm <- T
 chm_res <- 0.10
 subcircle <- 0.025
 # Create DTM?
-make_dtm <- F
+make_dtm <- T
 dtm_res <- 0.25
 # Calculate Metrics?
-make_mets <- F
+make_mets <- T
 met_res <- 1
 # Is ALS?
 is_als <- F
@@ -67,7 +67,9 @@ blocks_dir <- "D:/scantiques_roadshow/Processing/12_Block18_N"
 
 
 blocks_dir <- 'D:/Vaseux_Lake'
-
+blocks_dir <- 'G:/scantiques_roadshow/Vernon'
+blocks_dir <- 'F:/Jericho/Jericho_2022_LAS'
+blocks_dir <- 'Y:/Irwin/Kantelberg_MKRF_2023/sites/nelder_trial'
 setup_als_dirs(blocks_dir)
 
 ################################################################################

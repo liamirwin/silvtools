@@ -12,7 +12,6 @@ library(patchwork)
 acquisition_type <- function(proj_dir){
   # Initialize acquisition as NULL
   acq <- NULL
-
   # If the project name contains 'DAP', it's a DAP type acquisition
   if(stringr::str_detect(basename(proj_dir), pattern = 'DAP')){
     is_dap <- TRUE
@@ -178,7 +177,14 @@ calculate_ndgci <- function(norm_growth, norm_competition) {
   return(ndgci)
 }
 
-
+# New Index
+calculate_gci <- function(norm_growth, norm_competition){
+  # New index should range from 0 to 1
+  gci = ((1 - norm_growth) + norm_competition)/2
+  # Tree with value of 1 - slow growing, high competition
+  # Tree with value of 0 - fast growing, low competition
+  # Middle range of 0.5 - both low growth/comp and high growth/comp
+}
 
 # Function to read the boundary file
 read_boundary_file <- function(proj_dir, clip_to_bdy = T){
@@ -282,19 +288,33 @@ lower_cutoff_percentile <- 1
 
 
 
-generate_grid <- function(proj_dir, clip_to_bdy = TRUE, grid_area = 2500){
+generate_grid <- function(proj_dir, clip_trees_to_bdy = TRUE ,clip_grid_to_bdy = TRUE, grid_area = 2500){
+
+tictoc::tic()
+
+# Define Acquistion Name
 
 acq <- acquisition_type(proj_dir = proj_dir)
 
+print(glue::glue('Summarizing tree tops across {grid_area} m2 hexagonal grid for {acq}'))
+
+# Load tree tops with computed alphashapes
+
 ashapes <- read_alphashape_tree_tops(proj_dir, acq)
+
+# Filter duplicate alphashapes
 
 ttops <- ashapes %>% clean_up_treetops()
 
 print(glue::glue('Filtered out {nrow(ashapes) - nrow(ttops)} duplicate alphashapes ({round(((nrow(ashapes) - nrow(ttops))/nrow(ashapes)) * 100)}%)'))
 
+# Filter erroneous segmentations
+
 ttops_filt <- ttops %>% filter_unlikely_trees()
 
 print(glue::glue('Filtered out {nrow(ttops) - nrow(ttops_filt)} erroneous treetops ({round(((nrow(ttops) - nrow(ttops_filt))/nrow(ttops_filt)) * 100)}%)'))
+
+# Cap extreme values
 
 ttops_capped <- ttops_filt
 
@@ -304,70 +324,117 @@ for (metric in metrics) {
 
 ttops <- ttops_capped
 
-# Generate competition index
+# Generate heygi competition index
 
 chunks <- ttops %>% chunk_data()
 
 ttops_c <- calculate_heygi_for_chunks(chunks = chunks,
                                       df = ttops)
 
+# If clip_trees_to_bdy is TRUE, clip the tree tops to the boundary
+
+if(clip_trees_to_bdy){
+  bdy <- read_boundary_file(proj_dir)
+  ttops_c <- clip_to_boundary(ttops_c, bdy)
+  clip <- 'tree_clipped'
+  print('Tree tops clipped to boundary')
+} else{
+  clip <- 'tree_unclipped'
+}
+
+# Cap competition index values
+
 ttops <- cap_outliers(ttops_c, metric = 'cindex', upper_cutoff_percentile = 99, lower_cutoff_percentile = 1)
 
+# Now treetops all have crown volume and a cindex value we can use to calculate BAI
+
 ttops <- ttops %>%
-  calculate_linear_bai_models() %>%
-  calculate_gc_ratio()
+  calculate_linear_bai_models()
 
+# Calculate Growth:Competition Indicies
+
+# Original Index
 ttops$NDGCI <- calculate_ndgci(ttops$norm_sum_bai_5, ttops$norm_cindex)
+# New Index
+ttops$GCI <- calculate_gci(ttops$norm_sum_bai_5, ttops$norm_cindex)
 
+# Write final treetops to disk
+
+# Drop extra X and Y columns
+ttops <- ttops %>% select(-x, -y)
+
+st_write(ttops, glue::glue('{proj_dir}/output/vector/treetops/{acq}_ttops_lmf2_cut{upper_cutoff_percentile}-{lower_cutoff_percentile}_{clip}_bai_cindex_gci.gpkg'),  append = FALSE)
+
+print(glue::glue('Wrote {nrow(ttops)} treetops to disk for {acq}'))
+
+# Summarize tree tops across regular hexagonal grids
+print(glue::glue('Summarizing tree tops across {grid_area} m2 hexagonal grids'))
+# Basal area increment grid
 bai_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'sum_bai_5', summary_fun = 'sum')
+# Competition Index grid
 cindex_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'cindex', summary_fun = 'sum')
-NDGCI_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'NDGCI', summary_fun = 'sum')
-NDGCI__mean_grid <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'NDGCI', summary_fun = 'mean')
+# Old Growth:Competition Index grid
+NDGCI_grid_sum <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'NDGCI', summary_fun = 'sum')
+NDGCI_grid_mean <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'NDGCI', summary_fun = 'mean')
+# New Growth:Competition Index grid
+GCI_grid_sum <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'GCI', summary_fun = 'sum')
+GCI_grid_mean <- silvtools::summarize_grid(points_sf = ttops, grid_area = grid_area, grid_shape = 'hexagon', summary_var = 'GCI', summary_fun = 'mean')
+
+# Join grids together
 grids <- st_join(bai_grid, cindex_grid, left = TRUE, largest = TRUE) %>% mutate(sum_sum_bai_5_m2 = sum_sum_bai_5/1000000)
-grids <- st_join(grids, NDGCI_grid, left = TRUE, largest = TRUE)
-grids <- st_join(grids, NDGCI__mean_grid, left = TRUE, largest = TRUE)
+grids <- st_join(grids, NDGCI_grid_sum, left = TRUE, largest = TRUE)
+grids <- st_join(grids, NDGCI_grid_mean, left = TRUE, largest = TRUE)
+grids <- st_join(grids, GCI_grid_sum, left = TRUE, largest = TRUE)
+grids <- st_join(grids, GCI_grid_mean, left = TRUE, largest = TRUE)
 grids <- grids %>% dplyr::select(-contains("id"))
 
-
+# Clip to block boundary if required
 if(clip_to_bdy){
 
 bdy <- read_boundary_file(proj_dir)
 
+
+dir.create(glue::glue('{proj_dir}/output/vector/grids'), showWarnings = FALSE)
+st_write(grids, glue::glue('{proj_dir}/output/vector/grids/{acq}_{round(grid_area)}m_cut{upper_cutoff_percentile}-{lower_cutoff_percentile}_{clip}_grids.gpkg'), driver = 'GPKG', append = FALSE)
+
 grids <- clip_to_boundary(grids, bdy)
+st_write(grids, glue::glue('{proj_dir}/output/vector/grids/{acq}_{round(grid_area)}m_cut{upper_cutoff_percentile}-{lower_cutoff_percentile}_{clip}_grids_clip.gpkg'), driver = 'GPKG', append = FALSE)
+
+print(glue::glue('Clipped grids to block boundary and wrote to disk for {acq}'))
 
 }
 
-# First Normalize BAI and CINDEX values based on their maximum
 grids <- grids %>%
   mutate(norm_bai = sum_sum_bai_5 / max(sum_sum_bai_5),
          norm_cindex = sum_cindex / max(sum_cindex),
          norm_diff = abs(norm_bai - norm_cindex))
-# Then take the geometric mean - useful for dealing with variables that are different orders of magnitude
-# High values = High Growth/Competition (Don't Thin)
-# Intermediate Value = ???
-# Low Values = Low Growth/Competition (Don't Thin)
+
 grids <- grids %>%
   mutate(geom_mean_index = sqrt(norm_bai * norm_cindex),
          diff_geom_mean_index = sqrt(norm_bai * norm_cindex * norm_diff))
 
+tictoc::toc()
 
 return(grids)
 
 }
 
-ct1 <- generate_grid("G:/Quesnel_2022/process/CT1", clip_to_bdy = T, grid_area = 2500)
-ct2 <- generate_grid("G:/Quesnel_2022/process/CT2", clip_to_bdy = T, grid_area = 2500)
-ct3 <- generate_grid("G:/Quesnel_2022/process/CT3", clip_to_bdy = T, grid_area = 2500)
-ct4 <- generate_grid("G:/Quesnel_2022/process/CT4", clip_to_bdy = T, grid_area = 2500)
-ct5 <- generate_grid("G:/Quesnel_2022/process/CT5", clip_to_bdy = T, grid_area = 2500)
+
+ct1 <- generate_grid("G:/Quesnel_2022/process/CT1", clip_trees_to_bdy = T, clip_grid_to_bdy = T, grid_area = 2500)
+ct2 <- generate_grid("G:/Quesnel_2022/process/CT2", clip_trees_to_bdy = T, clip_grid_to_bdy = T, grid_area = 2500)
+ct3 <- generate_grid("G:/Quesnel_2022/process/CT3", clip_trees_to_bdy = T, clip_grid_to_bdy = T, grid_area = 2500)
+ct4 <- generate_grid("G:/Quesnel_2022/process/CT4", clip_trees_to_bdy = T, clip_grid_to_bdy = T, grid_area = 2500)
+ct5 <- generate_grid("G:/Quesnel_2022/process/CT5", clip_trees_to_bdy = T, clip_grid_to_bdy = T, grid_area = 2500)
 
 utm_crs <- st_crs("+init=EPSG:26910")
 
 grids <- ct1
 
 grids <- grids %>% mutate(area_ha = st_area(geometry)/10000, bai_m2_per_ha_5yr = sum_sum_bai_5_m2/area_ha, bai_m2_per_ha = bai_m2_per_ha_5yr/5)
+#grids <- grids %>% filter(as.numeric(area_ha) >= 0.20)
 
-break_percentiles <- c(0, 10, 50, 75, 85, 95, 100)
+
+# break_percentiles <- c(0, 10, 50, 75, 85, 95, 100)
 break_percentiles <- c(0, 10, 25, 50, 75, 90, 100)
 
 # Create a plot for sum_sum_bai_5
@@ -390,17 +457,6 @@ plot_cindex <- create_plot(data = grids,
                            crs = utm_crs,
                            decimal_places = 2)
 
-# Create a plot for diff_geom_mean_index
-# dgindex_breaks <- percentile_breaks(grids$sum_NDGCI, break_percentiles)
-# color_scale_viridis <- viridisLite::viridis(length(dgindex_breaks) - 1)
-#
-# plot_ndgci <- create_plot(data = grids,
-#                           fill_var = "sum_NDGCI",
-#                           breaks = dgindex_breaks,
-#                           color_scale = color_scale_viridis,
-#                           scale_name = "Cumulative NDGCI",
-#                           crs = utm_crs,
-#                           decimal_places = 2)
 
 dgindex_breaks <- percentile_breaks(grids$mean_NDGCI, break_percentiles)
 color_scale_viridis <- viridisLite::viridis(length(dgindex_breaks) - 1)
@@ -413,8 +469,32 @@ plot_ndgci <- create_plot(data = grids,
                           crs = utm_crs,
                           decimal_places = 2)
 
+gciindex_breaks <- percentile_breaks(grids$mean_GCI, break_percentiles)
+color_scale_viridis <- viridisLite::viridis(length(gciindex_breaks) - 1)
+plot_gci <- create_plot(data = grids,
+                        fill_var = "mean_GCI",
+                        breaks = gciindex_breaks,
+                        color_scale = color_scale_viridis,
+                        scale_name = "Mean GCI",
+                        crs = utm_crs,
+                        decimal_places = 2)
 
-plot_bai + plot_cindex + plot_ndgci
+# Plot GCI Sum
+
+gci_sum_breaks <- percentile_breaks(grids$sum_GCI, break_percentiles)
+color_scale_viridis <- viridisLite::viridis(length(gci_sum_breaks) - 1)
+
+plot_gci_sum <- create_plot(data = grids,
+                            fill_var = "sum_GCI",
+                            breaks = gci_sum_breaks,
+                            color_scale = color_scale_viridis,
+                            scale_name = "Sum GCI",
+                            crs = utm_crs,
+                            decimal_places = 2)
+
+library(patchwork)
+
+plot_bai + plot_cindex + plot_gci
 
 
 # Summary Metrics for Grids
@@ -445,5 +525,5 @@ grids_all <- do.call(rbind, block_grids) %>% st_drop_geometry()
 
 grid_summary <- calculate_summary_stats(grids_all)
 
-write.csv(grid_summary, 'D:/Proposal_2022/Thinning Paper/Figures/grid_summary_stats.csv')
+write.csv(grid_summary, 'D:/Proposal_2022/Thinning Paper/Figures/grid_summary_stats_oct.csv')
 

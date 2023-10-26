@@ -16,18 +16,27 @@
 #' @export
 setup_als_dirs <- function(proj_dir){
 
-  # Generate standardized list of inputs and outputs for assoicated spatial data
+  # Generate standardized list of inputs and outputs for associated spatial data
   # Multilevel, /input, /output, /doc, /script
   # Doc intended to store relevant literature, site info, data collection info
   # Script intended to house R code and other code used to process input dataset
 
-  targ_dirs <- file.path(proj_dir, c('input','output','doc',
-                                     'script','input/las','input/las/norm','input/las/class', 'input/las/tile',
-                                     'input/las/raw','input/vector',
+  targ_dirs <- file.path(proj_dir, c('input','output','doc', 'script',
+                                     'input/las',
+                                     'input/las/norm',
+                                     'input/las/class',
+                                     'input/las/tile',
+                                     'input/las/raw',
+                                     'input/vector',
                                      'input/raster',
-                                     'output/vector','output/raster',
-                                     'output/vector/treetops', 'output/vector/crowns',
-                                     'output/raster/crowns', 'output/raster/dtm','output/raster/chm','output/raster/metrics'))
+                                     'output/vector',
+                                     'output/raster',
+                                     'output/vector/treetops',
+                                     'output/vector/crowns',
+                                     'output/raster/crowns',
+                                     'output/raster/dtm',
+                                     'output/raster/chm',
+                                     'output/raster/metrics'))
 
   # Apply dir.create to generate standard folders
 

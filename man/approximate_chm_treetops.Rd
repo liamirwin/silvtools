@@ -49,6 +49,8 @@ approximate_chm_treetops(
 \item{mod}{A numeric modifier for the variable window size function. Default is 0.07.}
 
 \item{chm_ext}{A string related to the desired chm file selection pattern (default smooth) if multiple options; user chooses}
+
+\item{save_output}{A logical indicating whether to save the output to disk. Default is FALSE.}
 }
 \value{
 A list containing the results of each tree detection method.

@@ -14,11 +14,11 @@
 #' @export
 select_file_path  <- function(file_dir, pattern, ext = '.tif$') {
 
-  assert_that(!is.null(pattern))
-  assert_that(dir.exists(file_dir))
-  assert_that(is.character(file_dir), length(file_dir) == 1)
-  assert_that(is.character(pattern), length(pattern) == 1)
-  assert_that(is.character(ext), length(ext) == 1)
+  assertthat::assert_that(!is.null(pattern))
+  assertthat::assert_that(dir.exists(file_dir))
+  assertthat::assert_that(is.character(file_dir), length(file_dir) == 1)
+  assertthat::assert_that(is.character(pattern), length(pattern) == 1)
+  assertthat::assert_that(is.character(ext), length(ext) == 1)
 
   files <- list.files(file_dir, pattern = pattern, full.names = TRUE)
 

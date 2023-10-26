@@ -7,10 +7,10 @@
 #' @return A list containing the results of each segmentation method.
 #' @examples
 #' \dontrun{
-#' segment_chm_crowns("path/to/project")
+#' approximate_chm_crowns("path/to/project")
 #' }
 #' @export
-segment_chm_crowns <- function(proj_dir,
+approximate_chm_crowns <- function(proj_dir,
                                chm_dir = NULL,
                                vector_output = NULL,
                                raster_output = NULL,
@@ -18,9 +18,10 @@ segment_chm_crowns <- function(proj_dir,
                                hmin = 1,
                                crown_height_threshold = 0.25,
                                vis = FALSE,
-                               chm_ext = 'smooth') {
+                               chm_ext = 'smooth',
+                               window_size = NULL) {
 
-    tictoc::tic()
+  tictoc::tic()
 
   assertthat::assert_that(
     is.character(proj_dir), length(proj_dir) == 1,
@@ -41,9 +42,14 @@ segment_chm_crowns <- function(proj_dir,
   if(is.null(raster_output)) {
     raster_output <- glue::glue('{proj_dir}/output/raster')
   }
-  dir.create(glue::glue('{vector_output}/crowns'), showWarnings = FALSE, recursive = TRUE)
-  dir.create(glue::glue('{raster_output}/crowns'), showWarnings = FALSE, recursive = TRUE)
 
+  # Create output directories
+  if(!dir.exists(vector_output)) {
+    dir.create(vector_output, showWarnings = FALSE, recursive = TRUE)
+  }
+  if(!dir.exists(raster_output)) {
+    dir.create(raster_output, showWarnings = FALSE, recursive = TRUE)
+  }
 
     acq <- basename(proj_dir)
 
@@ -70,75 +76,84 @@ segment_chm_crowns <- function(proj_dir,
 
     ttops_files <- list.files(glue::glue('{vector_output}/treetops'), pattern = '.gpkg', full.names = T)
 
-    # ---- Load Tree tops ----
-
-    # Three different lmf methods lmf(ws = 2) lmfauto( ), variable ws lmf
-    ttops_ws <- st_read(str_subset(ttops_files, pattern = 'ws'), quiet = TRUE)
-    ttops_auto <- st_read(str_subset(ttops_files, pattern = 'auto'), quiet = TRUE)
-    ttops_v <- st_read(str_subset(ttops_files, pattern = 'lmfv'), quiet = TRUE)
-
-    print(glue::glue('Successfully loaded all sets of treetops for {acq}
-                 lmfws2 = {nrow(ttops_ws)} trees
-                 lmfauto = {nrow(ttops_auto)} trees
-                 lmfv = {nrow(ttops_v)}'))
+    ct <- round(crown_height_threshold * 100)
 
     # ---- Segment Crowns ----
 
-    print(glue::glue('Begnning Crown Segmentation for {acq}'))
+    # Start with Fixed Window Size Crowns
 
-    # lmfws
-    crowns <- silvtools::crown_mask(chunk = chm, ttops = ttops_ws, hmin = hmin, crown_height_threshold = crown_height_threshold, vis = FALSE)
-    print('fixed ws lmf crown segmentation complete...')
-    # lmfauto( )
-    crowns_auto <- silvtools::crown_mask(chunk = chm, ttops = ttops_auto, hmin = hmin, crown_height_threshold = crown_height_threshold, vis = FALSE)
-    print('lmfauto( ) crown segmentation complete...')
-    # lmfv()
-    crowns_v <- silvtools::crown_mask(chunk = chm, ttops = ttops_v, hmin = hmin, crown_height_threshold = crown_height_threshold, vis = FALSE)
-    print('lmfv( ) crown segmentation complete...')
+    if('fixed' %in% crown_methods) {
+      tictoc::tic()
+      # If not supplied; default window size to 2m, else take supplied argument
+      if (is.null(window_size)) {
+        window_size <- 2
+      }
+      print(glue::glue('Beginning {window_size}m fixed window size lmf crown segmentation for {acq} with {ct}% crown height threshold'))
+      # Load Tree Tops
+      ttops_ws <- st_read(str_subset(ttops_files, pattern = glue::glue('lmfws{window_size}')), quiet = TRUE)
+      print(glue::glue('Successfully loaded {nrow(ttops_ws)} - lmf {window_size}m window treetops for {acq}'))
+      # Segment Crowns
+      crowns_ws <- silvtools::crown_mask(chunk = chm, ttops = ttops_ws, hmin = hmin, crown_height_threshold = crown_height_threshold, vis = FALSE)
+      # Clean up crowns
+      print('Cleaning fixed window size lmf crowns...')
+      crowns_ws_p <- sf::st_as_sf(terra::as.polygons(crowns_ws))
+      print('Converted fixed window crowns to polygons... cleaning them now')
+      crowns_ws_p <- silvtools::convert_multi_to_single_polygons(polygons = crowns_ws_p, fill_holes = TRUE)
+      # Save crowns
+      terra::writeRaster(crowns_ws, glue::glue('{raster_output}/crowns/{acq}_lmf_ws{window_size}_watershed_crowns_ct{ct}.tif'), overwrite = T)
+      sf::st_write(crowns_ws_p, glue::glue('{vector_output}/crowns/{acq}_lmf_ws{window_size}_watershed_crowns_ct{ct}.gpkg'), append = FALSE)
+      print('fixed {window_size} m ws lmf crown segmentation complete...')
+      tictoc::toc()
+    } else {
+      print(glue::glue('Skipping fixed window size lmf crown segmentation for {acq}'))
+    }
 
-    # ---- Clean Crowns ----
+    if('auto' %in% crown_methods) {
+      tictoc::tic()
+      print(glue::glue('Beginning lmfauto crown segmentation for {acq} with {ct}% crown height threshold'))
+      # Load Tree Tops
+      ttops_auto <- st_read(str_subset(ttops_files, pattern = 'auto'), quiet = TRUE)
+      print(glue::glue('Successfully loaded {nrow(ttops_auto)} - lmfauto treetops for {acq}'))
+      # Segment Crowns
+      crowns_auto <- silvtools::crown_mask(chunk = chm, ttops = ttops_auto, hmin = hmin, crown_height_threshold = crown_height_threshold, vis = FALSE)
+      # Clean up crowns
+      print('Cleaning lmfauto crowns...')
+      crowns_auto_p <- sf::st_as_sf(terra::as.polygons(crowns_auto))
+      print('Converted lmfauto crowns to polygons... cleaning them now')
+      crowns_auto_p <- silvtools::convert_multi_to_single_polygons(polygons = crowns_auto_p, fill_holes = TRUE)
+      # Save crowns
+      terra::writeRaster(crowns_auto, glue::glue('{raster_output}/crowns/{acq}_lmfauto_watershed_crowns_ct{ct}.tif'), overwrite = T)
+      sf::st_write(crowns_auto_p, glue::glue('{vector_output}/crowns/{acq}_lmfauto_watershed_crowns_ct{ct}.gpkg'), append = FALSE)
+      print('lmfauto crown segmentation complete...')
+      tictoc::toc()
+      } else{
+        print(glue::glue('Skipping lmfauto crown segmentation for {acq}'))
+      }
 
-    # Clean crowns, take largest polygon for each treeID; fill holes within crowns
+    if('variable' %in% crown_methods) {
+      tictoc::tic()
+      print(glue::glue('Beginning lmfv crown segmentation for {acq} with {ct}% crown height threshold'))
+      # Load Tree Tops
+      ttops_v <- st_read(str_subset(ttops_files, pattern = 'lmfv'), quiet = TRUE)
+      print(glue::glue('Successfully loaded {nrow(ttops_v)} - lmfv treetops for {acq}'))
+      # Segment Crowns
+      crowns_v <- silvtools::crown_mask(chunk = chm, ttops = ttops_v, hmin = hmin, crown_height_threshold)
+      # Clean up crowns
+      print('Cleaning lmfv crowns...')
+      crowns_v_p <- sf::st_as_sf(terra::as.polygons(crowns_v))
+      print('Converted lmfv crowns to polygons... cleaning them now')
+      crowns_v_p <- silvtools::convert_multi_to_single_polygons(polygons = crowns_v_p, fill_holes = TRUE)
+      # Save crowns
+      terra::writeRaster(crowns_v, glue::glue('{raster_output}/crowns/{acq}_lmfv_watershed_crowns_ct{ct}.tif'), overwrite = T)
+      sf::st_write(crowns_v_p, glue::glue('{vector_output}/crowns/{acq}_lmfv_watershed_crowns_ct{ct}.gpkg'), append = FALSE)
+      print('lmfv crown segmentation complete...')
+      tictoc::toc()
+    } else {
+      print(glue::glue('Skipping lmfv crown segmentation for {acq}'))
+    }
 
-    print('Cleaning fixed window size lmf crowns...')
-    # lmf ws
-    crowns_p <- sf::st_as_sf(terra::as.polygons(crowns)) %>%
-      convert_multi_to_single_polygons(polygons = ., fill_holes = TRUE)
-
-    print('Cleaning lmfauto( ) crowns...')
-    # lmfauto( )
-    crowns_auto_p <- sf::st_as_sf(terra::as.polygons(crowns_auto)) %>%
-      convert_multi_to_single_polygons(polygons = ., fill_holes = TRUE)
-
-    print('Cleaning lmfv( ) crowns...')
-    # lmfv()
-    crowns_v_p <- sf::st_as_sf(terra::as.polygons(crowns_v)) %>%
-      convert_multi_to_single_polygons(polygons = ., fill_holes = TRUE)
-
-    dir.create(glue::glue('{vector_output}/crowns'), showWarnings = FALSE, recursive = T)
-    dir.create(glue::glue('{raster_output}/crowns'), showWarnings = FALSE, recursive = T)
-
-    # ---- Write Crowns ----
-
-    print(glue::glue('Segmentation process complete; attempting to write raster and vector crowns for {acq}'))
-
-    ct <- round(crown_height_threshold * 100)
-
-    # Write lmf(ws = 2) crowns
-    terra::writeRaster(crowns, glue::glue('{raster_output}/crowns/{acq}_lmf_ws2_watershed_crowns_ct{ct}.tif'), overwrite = T)
-    sf::st_write(crowns_p, glue::glue('{vector_output}/crowns/{acq}_lmf_ws2_watershed_crowns_ct{ct}.shp'), append = FALSE)
-    # Write lmfauto( ) crowns
-    terra::writeRaster(crowns_auto, glue::glue('{raster_output}/crowns/{acq}_lmf_auto_watershed_crowns_ct{ct}.tif'), overwrite = T)
-    sf::st_write(crowns_auto_p, glue::glue('{vector_output}/crowns/{acq}_lmf_auto_watershed_crowns_ct{ct}.shp'), append = FALSE)
-    # Write lmfv( ) crowns
-    terra::writeRaster(crowns_v, glue::glue('{raster_output}/crowns/{acq}_lmf_v_watershed_crowns_ct{ct}.tif'), overwrite = T)
-    sf::st_write(crowns_v_p, glue::glue('{vector_output}/crowns/{acq}_lmf_v_watershed_crowns_ct{ct}.shp'), append = FALSE)
-
-    print(glue::glue('Wrote crown rasters for {acq}'))
-
-    tictoc::toc()
-
-
+  print(glue::glue('Completed Crown Segmentation for {acq}'))
+  tictoc::toc()
 }
 
 

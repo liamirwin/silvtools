@@ -4,7 +4,7 @@
 \alias{get_crown_attributes}
 \title{Calculate crown attributes for a set of tree points}
 \usage{
-get_crown_attributes(X, Y, Z, pb = NULL)
+get_crown_attributes(X, Y, Z, R = NULL, G = NULL, B = NULL)
 }
 \arguments{
 \item{X}{Numeric vector, x-coordinates of tree points}
@@ -13,14 +13,20 @@ get_crown_attributes(X, Y, Z, pb = NULL)
 
 \item{Z}{Numeric vector, z-coordinates of tree points}
 
-\item{pb}{progress bar object, used for progress tracking (optional)}
+\item{R}{Numeric vector, red channel of tree points (optional)}
+
+\item{G}{Numeric vector, green channel of tree points (optional)}
+
+\item{B}{Numeric vector, blue channel of tree points (optional)}
 }
 \value{
-A data frame with columns for each crown attribute
+A data frame with columns for each crown attribute. If color channels (R, G, B) are provided,
+the data frame will also include the mean and median of the relative chromatic coordinates (RCC, GCC, BCC).
 }
 \description{
 This function calculates various crown attributes for a set of 3D tree points including:
-crown height (Zmax, Zq999, Zq99, Z_mean), crown size (n_points, vol_convex, vol_concave, vol_a05), and crown complexity (CV_Z, CRR)
+crown height (Zmax, Zq999, Zq99, Z_mean), crown size (n_points, vol_convex, vol_concave), crown complexity (CV_Z, CRR), and
+relative chromatic coordinates (RCC, GCC, BCC).
 }
 \examples{
 \dontrun{

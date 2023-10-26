@@ -10,9 +10,11 @@ Description: This package is my first attempt and focusing on reproducible
 License: MIT + file LICENSE
 Imports:
     alphashape3d,
+    assertthat,
     crayon,
     data.table,
     dplyr,
+    future,
     glue,
     imager,
     lidR,
