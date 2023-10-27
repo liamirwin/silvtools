@@ -88,9 +88,9 @@ approximate_chm_crowns <- function(proj_dir,
       if (is.null(window_size)) {
         window_size <- 2
       }
-      print(glue::glue('Beginning {window_size}m fixed window size lmf crown segmentation for {acq} with {ct}% crown height threshold'))
+      print(glue::glue('Beginning {window_size}m fixed window size watershed lmf crown segmentation for {acq} with {ct}% crown height threshold'))
       # Load Tree Tops
-      ttops_ws <- st_read(str_subset(ttops_files, pattern = glue::glue('lmfws{window_size}')), quiet = TRUE)
+      ttops_ws <- sf::st_read(stringr::str_subset(ttops_files, pattern = glue::glue('lmfws{window_size}')), quiet = TRUE)
       print(glue::glue('Successfully loaded {nrow(ttops_ws)} - lmf {window_size}m window treetops for {acq}'))
       # Segment Crowns
       crowns_ws <- silvtools::crown_mask(chunk = chm, ttops = ttops_ws, hmin = hmin, crown_height_threshold = crown_height_threshold, vis = FALSE)
@@ -112,7 +112,7 @@ approximate_chm_crowns <- function(proj_dir,
       tictoc::tic()
       print(glue::glue('Beginning lmfauto crown segmentation for {acq} with {ct}% crown height threshold'))
       # Load Tree Tops
-      ttops_auto <- st_read(str_subset(ttops_files, pattern = 'auto'), quiet = TRUE)
+      ttops_auto <- sf::st_read(stringr::str_subset(ttops_files, pattern = 'auto'), quiet = TRUE)
       print(glue::glue('Successfully loaded {nrow(ttops_auto)} - lmfauto treetops for {acq}'))
       # Segment Crowns
       crowns_auto <- silvtools::crown_mask(chunk = chm, ttops = ttops_auto, hmin = hmin, crown_height_threshold = crown_height_threshold, vis = FALSE)
@@ -134,7 +134,7 @@ approximate_chm_crowns <- function(proj_dir,
       tictoc::tic()
       print(glue::glue('Beginning lmfv crown segmentation for {acq} with {ct}% crown height threshold'))
       # Load Tree Tops
-      ttops_v <- st_read(str_subset(ttops_files, pattern = 'lmfv'), quiet = TRUE)
+      ttops_v <- sf::st_read(stringr::str_subset(ttops_files, pattern = 'lmfv'), quiet = TRUE)
       print(glue::glue('Successfully loaded {nrow(ttops_v)} - lmfv treetops for {acq}'))
       # Segment Crowns
       crowns_v <- silvtools::crown_mask(chunk = chm, ttops = ttops_v, hmin = hmin, crown_height_threshold)
