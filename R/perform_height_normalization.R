@@ -20,6 +20,7 @@ perform_height_normalization <- function(proj_dir,
                                          num_cores = 1L,
                                          index_tiles = TRUE,
                                          output_laz = TRUE) {
+  tictoc::tic()
 
   # Handle parallelization
   if (num_cores == 1L) {
@@ -51,6 +52,7 @@ perform_height_normalization <- function(proj_dir,
   # Set options
   lidR::opt_progress(ctg_class) <- TRUE
   lidR::opt_chunk_buffer(ctg_class) <- chunk_buf
+  lidR::opt_laz_compression(ctg_class) <- TRUE
   norm_dir <- glue::glue("{proj_dir}/input/las/norm")
 
   # Check if norm_dir exists, if not create it
@@ -70,13 +72,17 @@ perform_height_normalization <- function(proj_dir,
     lidR::opt_output_files(ctg_class) <- glue::glue("{norm_dir}/{acq}_{{XLEFT}}_{{YBOTTOM}}_norm_{norm_algorithm}")
   }
 
+  print(glue::glue('Beginning normalization of {acq} lidar tiles'))
+
   # Normalize point cloud using specified algorithm
   ctg_norm <- lidR::normalize_height(ctg_class, algorithm = algo)
 
   # Optionally index the normalized tiles
   if (index_tiles) {
+  print(glue::glue('Indexing normalized lidar tiles for {acq}'))
     lidR:::catalog_laxindex(ctg_norm)
   }
 
-  return(ctg_norm)
+  tictoc::toc()
+
 }
