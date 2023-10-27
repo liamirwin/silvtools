@@ -40,6 +40,7 @@ perform_tiling <- function(proj_dir,
   lidR::opt_chunk_size(ctg_tile) <- tile_size
   lidR::opt_chunk_buffer(ctg_tile) <- chunk_buffer
   lidR::opt_progress(ctg_tile) <- TRUE
+  lidR::opt_laz_compression(ctg_tile) <- TRUE
   lidR::opt_output_files(ctg_tile) <- glue::glue("{tile_dir}/{acq}_{{XLEFT}}_{{YBOTTOM}}")
 
 

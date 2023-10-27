@@ -4,7 +4,7 @@
 #'
 #' @param proj_dir Project directory containing the classified LAS files.
 #' @param res DTM resolution in meters.
-#' @param dtm_algorithm Custom DTM algorithm. Default is NULL (TIN). c('tin', 'knnidw', 'knnreg')
+#' @param dtm_algorithm Custom DTM algorithm. Default is NULL (TIN). c('tin', 'knnidw', 'kriging')
 #' @param num_cores Number of cores for parallel processing. Default is 1.
 #' @param chunk_buf Chunk buffer size in meters. Default is NULL (auto-set to 5% of tile_size).
 #' @param k Number of neighbours of IDW/KNN. Default is 8
@@ -46,7 +46,7 @@ generate_dtm <- function(proj_dir, res = 1, dtm_algorithm = 'tin',
   opt_stop_early(ctg_class) <- FALSE
 
   # Create the DTM output directory if it doesn't exist
-  dtm_output_dir <- glue::glue("{proj_dir}/output/dtm")
+  dtm_output_dir <- glue::glue("{proj_dir}/output/raster/dtm")
   if (!dir.exists(dtm_output_dir)) {
     dir.create(dtm_output_dir, showWarnings = FALSE, recursive = TRUE)
     print(glue::glue("Created a directory for DTM {dtm_output_dir}"))
@@ -56,19 +56,31 @@ generate_dtm <- function(proj_dir, res = 1, dtm_algorithm = 'tin',
   opt_output_files(ctg_class) <- glue::glue("{dtm_output_dir}/tiles/{acq}_dtm_{res}_{{XLEFT}}_{{YBOTTOM}}")
   ctg_class@output_options$drivers$SpatRaster$param$overwrite <- TRUE
 
+
+  print(glue::glue("Generating DTM for {acq} at {res}m using {dtm_algorithm} algorithm(s)"))
+
   # Choose the DTM algorithm based on user input or default to TIN
 
   for (algo in dtm_algorithm) {
-    algo_name <- match.arg(algo, choices = c('tin', 'knnidw', 'knnreg'))  # Validate algorithm name
+    algo_name <- algo
 
     # Select the DTM algorithm based on user input
     if (algo_name == 'tin') {
       algo_fun <- lidR::tin()
     } else if (algo_name == 'knnidw') {
       algo_fun <- lidR::knnidw(k = k)
-    } else if (algo_name == 'knnreg') {
-      algo_fun <- lidR::knnreg(k = k)
+    } else if (algo_name == 'kriging') {
+      algo_fun <- lidR::kriging(k = k)
     }
+
+    dtm_tiles_dir <- glue::glue("{dtm_output_dir}/tiles")
+
+    # Delete intermediate raster tiles
+    if (dir.exists(dtm_tiles_dir)) {
+      unlink(dtm_tiles_dir, recursive = TRUE)
+      print("Deleted intermediate DTM tiles")
+    }
+
 
   # Generate the terrain model
   lidR::rasterize_terrain(ctg_class, res = res, algorithm = algo_fun)
@@ -100,7 +112,7 @@ generate_dtm <- function(proj_dir, res = 1, dtm_algorithm = 'tin',
   }
 
   print(glue::glue("DTM generation process complete for {acq} using {algo_name} algorithm"))
-
+  print(glue::glue('Wrote DTM rasters to {dtm_output_dir}'))
 
   }
 

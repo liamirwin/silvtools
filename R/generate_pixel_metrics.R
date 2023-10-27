@@ -19,7 +19,7 @@
 #' @importFrom future plan
 #'
 #' @export
-generate_pixel_metrics <- function(proj_dir, res = 1, metrics = c('basic'), zmin = NULL,
+generate_pixel_metrics <- function(proj_dir, res = 1, metrics = c('basic'), zmin = NA,
                          num_cores = 1L, chunk_buf = NULL,
                          acq = NULL) {
   # Handle parallelization
@@ -58,7 +58,7 @@ generate_pixel_metrics <- function(proj_dir, res = 1, metrics = c('basic'), zmin
 
   # If zmin is not NA print/save in output names
   if (!is.na(zmin)) {
-    zmin_msg <- glue::glue("zmin_{zmin}")
+    zmin_msg <- glue::glue("zmin{zmin}_")
   } else {
     zmin_msg <- ''
   }
@@ -68,12 +68,13 @@ generate_pixel_metrics <- function(proj_dir, res = 1, metrics = c('basic'), zmin
     tictoc::tic()
     print(glue::glue("Generating basic pixel metrics for {acq} at {res}m resolution {zmin_msg}"))
     # Set output file options for saving CHM tiles
-    lidR::opt_output_files(ctg_norm) <- glue::glue("{mets_output_dir}/tiles/{acq}_basic_{zmin_msg}_{res}m_{{XLEFT}}_{{YBOTTOM}}")
+    lidR::opt_output_files(ctg_norm) <- glue::glue("{mets_output_dir}/tiles/{acq}_basic_{zmin_msg}{res}m_{{XLEFT}}_{{YBOTTOM}}")
     metrics <-  pixel_metrics(ctg_norm, func = ~lidRmetrics::metrics_basic(z = Z, zmin = zmin), res = res)
     # Load Metrics Tiles as a virtual raster dataset
     mets_tiles_dir <- glue::glue("{mets_output_dir}/tiles")
     mets_tiles <- list.files(mets_tiles_dir, pattern = '.tif$', full.names = TRUE)
     mets <- terra::vrt(mets_tiles, glue::glue("{mets_tiles_dir}/{acq}_basic.vrt"), overwrite = TRUE)
+    names(mets) <- names(terra::rast(mets_tiles[1]))
     # Save Metrics to disk
     terra::writeRaster(mets, glue::glue("{mets_output_dir}/{acq}_basic_{zmin_msg}_{res}m.tif"), overwrite = TRUE)
     # Delete intermediate tiles
