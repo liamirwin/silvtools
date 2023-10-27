@@ -1,0 +1,33 @@
+---
+title: "lidar_processing_summary"
+author: "Liam Irwin"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Lidar Data Summary
+
+```{r, echo = FALSE}
+# Hide this chunk to avoid printing it in output
+library(lidR)
+library(glue)
+ctg <- catalog(glue::glue('{proj_dir}/input/class'))
+
+```
+
+```{r}
+plot(ctg, mapview = T)
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).

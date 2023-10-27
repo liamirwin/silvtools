@@ -23,6 +23,8 @@ solar_simulator(
 \item{aoi_file}{Optional area of interest for internal cropping of DSM either file pointing to shp/gpkg etc or loaded sf object}
 
 \item{sun_pos}{Sun position data frame from get_sun_pos, zenith, azimuth for each timepoint of interest}
+
+\item{num_cores}{Number of cores to use for parallel processing. Default is 1.}
 }
 \value{
 Writes a raster for each timepoint recording the irradiance for each given pixel

@@ -15,10 +15,7 @@
 #' @param chm_ext A string related to the desired chm file selection pattern (default smooth) if multiple options; user chooses
 #' @param save_output A logical indicating whether to save the output to disk. Default is FALSE.
 #' @return A list containing the results of each tree detection method.
-#' @examples
-#' \dontrun{
-#' approximate_chm_treetops("path/to/project")
-#' }
+#'
 #' @export
 approximate_chm_treetops <- function(proj_dir,
                               chm_dir = NULL,

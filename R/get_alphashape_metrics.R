@@ -4,6 +4,7 @@
 #' Crown metrics such as X, Y, Zmax, Zq999, Zq99, Z_mean, n_points, vol_convex, vol_concave, vol_a05, CV_Z, and CRR are then computed for each tree.
 #'
 #' @param chunk an object of class LAS or a catalog chunk which has points attributed with treeID values, typically computed from lidR::segment_trees.
+#' @param RGB logical. If TRUE, the function will compute crown metrics for RGB values.
 #' @return A data frame with columns treeID, X, Y, Zmax, Zq999, Zq99, Z_mean, n_points, vol_convex, vol_concave, vol_a05, CV_Z, CRR.
 #'
 #' @examples

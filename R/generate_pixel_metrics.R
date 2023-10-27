@@ -5,6 +5,9 @@
 #' @param proj_dir Project directory containing the normalized LAS files.
 #' @param res CHM resolution in meters. Default is 1.
 #' @param metrics Sets of metrics to generate. Default is 'stdmetrics'.
+#' @param num_cores Number of cores to use for parallel processing. Default is 1.
+#' @param chunk_buf Chunk buffer size in meters. Default is 5% of tile size.
+#' @param acq Acquisition name. Default is NULL.
 #'
 #' @return Saves lidar pixel metrics locally within proj_dir
 #'

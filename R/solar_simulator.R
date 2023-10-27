@@ -5,7 +5,7 @@
 #' @param site_name Site name for file naming purposes ex 'CT1'
 #' @param aoi_file Optional area of interest for internal cropping of DSM either file pointing to shp/gpkg etc or loaded sf object
 #' @param sun_pos Sun position data frame from get_sun_pos, zenith, azimuth for each timepoint of interest
-#'
+#' @param num_cores Number of cores to use for parallel processing. Default is 1.
 #' @return Writes a raster for each timepoint recording the irradiance for each given pixel
 #' @export
 #'

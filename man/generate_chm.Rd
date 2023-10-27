@@ -6,7 +6,10 @@
 \usage{
 generate_chm(
   proj_dir,
-  chm_res = 1,
+  res = 1,
+  algorithm = c("p2r", "pitfree"),
+  subcircle_p2r = 0,
+  subcircle_pitfree = 0,
   num_cores = 1L,
   chunk_buf = NULL,
   acq = NULL,
@@ -18,7 +21,13 @@ generate_chm(
 \arguments{
 \item{proj_dir}{Project directory containing the normalized LAS files.}
 
-\item{chm_res}{CHM resolution in meters. Default is 1.}
+\item{res}{CHM resolution in meters. Default is 1.}
+
+\item{algorithm}{Algorithm to use for CHM generation. Default is 'p2r'. Options are 'p2r' and 'pitfree'}
+
+\item{subcircle_p2r}{Subcircle argument for p2r CHM generation, default is 0.}
+
+\item{subcircle_pitfree}{Subcircle argument for pitfree CHM generation, default is 0.}
 
 \item{num_cores}{Number of cores for parallel processing. Default is 1.}
 
@@ -33,7 +42,7 @@ generate_chm(
 \item{max_clamp}{Maximum value to clamp CHM at. Default is 50.}
 }
 \value{
-A SpatRaster representing the CHM.
+Saves a CHM locally as well as smoothed and filled versions of the CHM.
 }
 \description{
 This function generates a Canopy Height Model (CHM) from normalized LAS files.

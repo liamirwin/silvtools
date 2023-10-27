@@ -9,7 +9,7 @@ perform_height_normalization(
   chunk_buf = NULL,
   tile_size = NULL,
   acq = NULL,
-  norm_algorithm = lidR::tin(),
+  norm_algorithm = "tin",
   num_cores = 1L,
   index_tiles = TRUE,
   output_laz = TRUE
