@@ -12,12 +12,12 @@
 #' # Create example data
 #' example_data <- data.frame(id = 1:100,
 #'                            height = rnorm(100, mean = 10, sd = 2),
-#'                            species = factor(rep(c("A", "B", "C", "D"), each = 25)))
-#'
+#'                            species = factor(rep(c("A", "B", "C", "D"),
+#'                             each = 25)))
 #' # Plot the histogram
-#' plot <- plot_outlier_distribution(example_data, metric = "height", percentiles = c(1, 2, 90, 95, 99))
+#' plot <- plot_outlier_distribution(example_data, metric = "height",
+#' percentiles = c(1, 2, 90, 95, 99))
 #' print(plot)
-#'
 #' }
 #' @export
 plot_outlier_distribution <- function(data, metric, percentiles = c(1, 2, 90, 95, 99)) {

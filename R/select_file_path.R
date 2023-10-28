@@ -10,7 +10,9 @@
 #' @param ext A string specifying the file extension to filter on. Default is '.tif$'.
 #' @return A string containing the full path of the selected file.
 #' @examples
+#' \dontrun{
 #' select_file_path("path/to/directory", "pattern")
+#' }
 #' @export
 select_file_path  <- function(file_dir, pattern, ext = '.tif$') {
 

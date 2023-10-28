@@ -6,28 +6,31 @@
 \usage{
 generate_dtm(
   proj_dir,
-  dtm_res,
+  res = 1,
+  dtm_algorithm = "tin",
   num_cores = 1L,
   chunk_buf = NULL,
-  dtm_algorithm = NULL,
-  acq = NULL
+  k = 8,
+  acq = basename(proj_dir)
 )
 }
 \arguments{
 \item{proj_dir}{Project directory containing the classified LAS files.}
 
-\item{dtm_res}{DTM resolution in meters.}
+\item{res}{DTM resolution in meters.}
+
+\item{dtm_algorithm}{Custom DTM algorithm. Default is NULL (TIN). c('tin', 'knnidw', 'kriging')}
 
 \item{num_cores}{Number of cores for parallel processing. Default is 1.}
 
 \item{chunk_buf}{Chunk buffer size in meters. Default is NULL (auto-set to 5\% of tile_size).}
 
-\item{dtm_algorithm}{Custom DTM algorithm. Default is NULL (TIN).}
+\item{k}{Number of neighbours of IDW/KNN. Default is 8}
 
 \item{acq}{Acquisition name. Default is NULL.}
 }
 \value{
-A SpatRaster representing the DTM.
+Saves DTMs locally to proj_dir/output/raster/dtm
 }
 \description{
 This function generates a Digital Terrain Model (DTM) from classified LAS files.

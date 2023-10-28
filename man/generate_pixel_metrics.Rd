@@ -7,7 +7,8 @@
 generate_pixel_metrics(
   proj_dir,
   res = 1,
-  metrics = c("stdmetrics"),
+  metrics = c("basic"),
+  zmin = NA,
   num_cores = 1L,
   chunk_buf = NULL,
   acq = NULL
@@ -18,7 +19,9 @@ generate_pixel_metrics(
 
 \item{res}{CHM resolution in meters. Default is 1.}
 
-\item{metrics}{Sets of metrics to generate. Default is 'stdmetrics'.}
+\item{metrics}{Sets of metrics to generate. Default is 'basic'. 'percentiles'}
+
+\item{zmin}{Minimum Z value of points to consider in metrics. Default NA but EFI's often use 2m}
 
 \item{num_cores}{Number of cores to use for parallel processing. Default is 1.}
 

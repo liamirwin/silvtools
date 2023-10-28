@@ -33,5 +33,7 @@ If no files match the specified pattern, an error is returned.
 }
 \examples{
 select_file_path("path/to/directory", "pattern")
+\dontrun{
 select_file_path("path/to/directory", "pattern")
+}
 }
