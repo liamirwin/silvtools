@@ -7,6 +7,7 @@
 #' @param output_laz Logical, should the output be in LAZ format?
 #' @param num_cores Number of cores for parallel processing.
 #' @param acq Acquisition name.
+#' @param out_dir Directory where las tiles are written; default is '{proj_dir}/input/las/tile'
 #'
 #' @return A catalog of tiled LAS files.
 #' @export
@@ -17,7 +18,8 @@ perform_tiling <- function(proj_dir,
                            index_tiles = TRUE,
                            output_laz = TRUE,
                            num_cores = 1L,
-                           acq = NULL) {
+                           acq = NULL,
+                           tile_dir = NULL) {
 
   if (num_cores == 1L) {
     future::plan("sequential")
@@ -33,7 +35,10 @@ perform_tiling <- function(proj_dir,
     stop("proj_dir must be specified.")
   }
 
+
+  if(is.null(tile_dir)){
   tile_dir <- glue::glue("{proj_dir}/input/las/tile")
+  }
 
   ctg_tile <- lidR::catalog(glue::glue('{proj_dir}/input/las/raw'))
 

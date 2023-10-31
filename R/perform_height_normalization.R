@@ -8,6 +8,8 @@
 #' @param num_cores Number of cores for parallel processing. Default is 1.
 #' @param index_tiles Logical, should tiles be indexed? Default is TRUE.
 #' @param output_laz Logical, should the output be in LAZ format? Default is TRUE.
+#' @param k Number of neighbours for knnidw algorithm
+#' @param norm_dir Directory to write normalized tiles to; default is '{proj_dir}/input/las/norm'
 #'
 #' @return A catalog of height-normalized LAS files.
 #' @export
@@ -19,7 +21,9 @@ perform_height_normalization <- function(proj_dir,
                                          norm_algorithm = 'tin',
                                          num_cores = 1L,
                                          index_tiles = TRUE,
-                                         output_laz = TRUE) {
+                                         output_laz = TRUE,
+                                         k = 8,
+                                         norm_dir = NULL) {
   tictoc::tic()
 
   # Handle parallelization
@@ -53,7 +57,10 @@ perform_height_normalization <- function(proj_dir,
   lidR::opt_progress(ctg_class) <- TRUE
   lidR::opt_chunk_buffer(ctg_class) <- chunk_buf
   lidR::opt_laz_compression(ctg_class) <- TRUE
+
+  if(is.null(norm_dir)){
   norm_dir <- glue::glue("{proj_dir}/input/las/norm")
+  }
 
   # Check if norm_dir exists, if not create it
   if (!dir.exists(norm_dir)) {
@@ -61,8 +68,10 @@ perform_height_normalization <- function(proj_dir,
   }
 
   # Set Normalization Algorithm
-  if('tin' == norm_algorithm) {
+  if(norm_algorithm == 'tin') {
     algo <- lidR::tin()
+  } else if (norm_algorithm == 'knnidw'){
+    algo <- lidR::knnidw(k = k)
   }
 
 
