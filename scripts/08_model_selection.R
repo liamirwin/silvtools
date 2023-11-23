@@ -45,6 +45,8 @@ model_df <- read.csv('G:/Quesnel_2022/Modelling/core_trees_fix4.csv') %>%
 model_df <- model_df %>%
   filter(!(tree_id.x %in% c('CT5P3-Pl040','CT5P2-Fd027', 'CT1P2-Sx044', 'CT5P2-Fd047')) & !is.na(vol_concave))
 
+model_df_filt <- model_df
+
 plot_relationship <- function(df, xvar, yvar, groupvar=NULL, xlab=NULL, ylab=NULL, label = F) {
   # Create scatter plot with line of fit for each group in groupvar
   xlab <- ifelse(is.null(xlab), xvar, xlab)
@@ -132,7 +134,7 @@ p1 + p2 + p3 + p4
 
 model_df <- model_df_filt
 
-model_df <- model_df %>% rename(PlotID = PlotID.x, Diameter = Diametr)
+#model_df <- model_df %>% rename(PlotID = PlotID.x, Diameter = Diametr)
 
 # WITHOUT RANDOM EFFECTS
 

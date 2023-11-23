@@ -78,6 +78,16 @@ approximate_chm_crowns <- function(proj_dir,
 
     ct <- round(crown_height_threshold * 100)
 
+
+    # Check if output directories exist; if not, create them
+
+    if(!dir.exists(glue::glue('{raster_output}/crowns'))) {
+      dir.create(glue::glue('{raster_output}/crowns'), showWarnings = FALSE, recursive = TRUE)
+    }
+    if(!dir.exists(glue::glue('{vector_output}/crowns'))) {
+      dir.create(glue::glue('{vector_output}/crowns'), showWarnings = FALSE, recursive = TRUE)
+    }
+
     # ---- Segment Crowns ----
 
     # Start with Fixed Window Size Crowns
@@ -90,7 +100,7 @@ approximate_chm_crowns <- function(proj_dir,
       }
       print(glue::glue('Beginning {window_size}m fixed window size watershed lmf crown segmentation for {acq} with {ct}% crown height threshold'))
       # Load Tree Tops
-      ttops_ws <- sf::st_read(stringr::str_subset(ttops_files, pattern = glue::glue('lmfws{window_size}')), quiet = TRUE)
+      ttops_ws <- sf::st_read(stringr::str_subset(ttops_files, pattern = glue::glue('lmf_ws_{window_size}')), quiet = TRUE)
       print(glue::glue('Successfully loaded {nrow(ttops_ws)} - lmf {window_size}m window treetops for {acq}'))
       # Segment Crowns
       crowns_ws <- silvtools::crown_mask(chunk = chm, ttops = ttops_ws, hmin = hmin, crown_height_threshold = crown_height_threshold, vis = FALSE)
