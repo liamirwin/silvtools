@@ -80,6 +80,16 @@ approximate_chm_crowns <- function(proj_dir,
 
     # ---- Segment Crowns ----
 
+    # Create Crown Save Directory
+
+    if(!dir.exists(glue::glue('{raster_output}/crowns'))) {
+      dir.create(glue::glue('{raster_output}/crowns'), showWarnings = FALSE, recursive = TRUE)
+    }
+
+    if(!dir.exists(glue::glue('{vector_output}/crowns'))) {
+      dir.create(glue::glue('{vector_output}/crowns'), showWarnings = FALSE, recursive = TRUE)
+    }
+
     # Start with Fixed Window Size Crowns
 
     if('fixed' %in% crown_methods) {

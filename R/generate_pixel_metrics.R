@@ -19,7 +19,7 @@
 #' @importFrom future plan
 #'
 #' @export
-generate_pixel_metrics <- function(proj_dir, res = 1, metrics = c('basic'), zmin = NA,
+generate_pixel_metrics <- function(proj_dir, res = 1, metrics = c('basic'), zmin = 0,
                          num_cores = 1L, chunk_buf = NULL,
                          acq = NULL) {
   # Handle parallelization
@@ -56,12 +56,7 @@ generate_pixel_metrics <- function(proj_dir, res = 1, metrics = c('basic'), zmin
   # Set overwrite options
   ctg_norm@output_options$drivers$SpatRaster$param$overwrite <- TRUE
 
-  # If zmin is not NA print/save in output names
-  if (!is.na(zmin)) {
-    zmin_msg <- glue::glue("zmin{zmin}_")
-  } else {
-    zmin_msg <- ''
-  }
+  zmin_msg <- glue::glue("zmin{zmin}_")
 
   # Generate Standard Metrics
   if('basic' %in% metrics) {
@@ -69,7 +64,7 @@ generate_pixel_metrics <- function(proj_dir, res = 1, metrics = c('basic'), zmin
     print(glue::glue("Generating basic pixel metrics for {acq} at {res}m resolution {zmin_msg}"))
     # Set output file options for saving CHM tiles
     lidR::opt_output_files(ctg_norm) <- glue::glue("{mets_output_dir}/tiles/{acq}_basic_{zmin_msg}{res}m_{{XLEFT}}_{{YBOTTOM}}")
-    metrics <-  pixel_metrics(ctg_norm, func = ~lidRmetrics::metrics_basic(z = Z, zmin = zmin), res = res)
+    metrics <-  pixel_metrics(ctg_norm, func = ~lidRmetrics::metrics_basic(z = Z), res = res)
     # Load Metrics Tiles as a virtual raster dataset
     mets_tiles_dir <- glue::glue("{mets_output_dir}/tiles")
     mets_tiles <- list.files(mets_tiles_dir, pattern = '.tif$', full.names = TRUE)
