@@ -18,24 +18,27 @@
 #' @export
 #'
 apply_treeid_to_las <- function(chunk, crowns){
-  tictoc::tic()
+
   las <- readLAS(chunk)
   box <- st_as_sfc(st_bbox(chunk))
   if (is.empty(las)) return(NULL)
-  # if (!'treeID' %in% names(las@data)) return(NULL)
+
   box_buf <- st_buffer(box, dist = 5)
+
   # Select crowns relevant to chunk of interest
   chunk_crowns <- crowns[sf::st_intersects(crowns, box_buf, sparse = FALSE),]
   if(nrow(chunk_crowns) == 0) return(NULL)
+
+  # Rename columns if necessary
   if("Z" %in% names(chunk_crowns)){
   names(chunk_crowns) <- c('treeID','geometry')
   }
+
   # Merge tree IDs with las
   tree_las <- merge_spatial(las, chunk_crowns, attribute = 'treeID')
   tree_las = add_lasattribute(tree_las, name="treeID", desc="ID of a tree")
   tree_las <- filter_poi(tree_las, !is.na(treeID))
   glue::glue('Merged {nrow(chunk_crowns)} crowns with {length(las@data$Z)} points in chunk')
-  tictoc::toc()
   return(tree_las)
 }
 
