@@ -14,6 +14,8 @@
 #' @param mod A numeric modifier for the variable window size function. Default is 0.07.
 #' @param chm_ext A string related to the desired chm file selection pattern (default smooth) if multiple options; user chooses
 #' @param save_output A logical indicating whether to save the output to disk. Default is FALSE.
+#' @param vector_ext A string specifying the vector file extension. Default is '.gpkg', options '.shp', '.gpkg', '.geojson'.
+#' @param is_vrt A logical indicating whether the CHM is a virtual raster. Default is FALSE.
 #' @return A list containing the results of each tree detection method.
 #'
 #' @export
@@ -27,7 +29,9 @@ approximate_chm_treetops <- function(proj_dir,
                               hmin = 2,
                               mod = 0.07,
                               chm_ext = 'smooth_p2r',
-                              save_output = TRUE) {
+                              save_output = TRUE,
+                              vector_ext = '.gpkg',
+                              is_vrt = FALSE) {
 
   tictoc::tic()
 
@@ -54,7 +58,14 @@ approximate_chm_treetops <- function(proj_dir,
     stop(glue::glue("The specified CHM directory {chm_dir} does not exist."))
   }
 
+
+
+  if(is_vrt){
+    vrt_file <- list.files(chm_dir, pattern = '.vrt$', full.names = T)
+    chm <- vrt(vrt_file)
+  } else{
   chm <- terra::rast(select_file_path(chm_dir, pattern = chm_ext, ext = '.tif$'))
+  }
 
   results <- list()
 
@@ -96,7 +107,7 @@ approximate_chm_treetops <- function(proj_dir,
       sf::st_write(
         results$lmf_ws,
         dsn =  glue::glue(
-          '{proj_dir}/output/vector/treetops/{acq}_lmfws{fix_ws}m.gpkg'
+          '{proj_dir}/output/vector/treetops/{acq}_lmf_ws_{fix_ws}m_hmin{hmin}{vector_ext}'
         ) ,
         append = FALSE
       )
@@ -107,7 +118,7 @@ approximate_chm_treetops <- function(proj_dir,
     if (auto_window == TRUE) {
       sf::st_write(
         results$lmf_auto,
-        dsn =  glue::glue('{proj_dir}/output/vector/treetops/{acq}_lmfauto.gpkg'),
+        dsn =  glue::glue('{proj_dir}/output/vector/treetops/{acq}_lmfauto_hmin{hmin}{vector_ext}'),
         append = FALSE
       )
       print(glue::glue(
@@ -117,7 +128,7 @@ approximate_chm_treetops <- function(proj_dir,
     if (variable_window == TRUE) {
       sf::st_write(
         results$lmf_v,
-        dsn =  glue::glue('{proj_dir}/output/vector/treetops/{acq}_lmfv.gpkg'),
+        dsn =  glue::glue('{proj_dir}/output/vector/treetops/{acq}_lmfv_hmin{hmin}{vector_ext}'),
         append = FALSE
       )
       print(glue::glue('Wrote {nrow(results$lmf_v)} variable window tree tops'))

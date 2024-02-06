@@ -427,6 +427,24 @@ summary_lme_fmt <- summary_lme %>%
 
 summary_lme_fmt
 
+
+# Compute AICc for each model
+
+compute_aic <- function(model){
+  AICc <- MuMIn::AICc(model, k = 2)
+  return(AICc)
+}
+
+# Apply function to each model
+aicc_results <- lapply(models, compute_aic)
+
+# Compute adjusted R2 for each model
+compute_adj_r2 <- function(model){
+  adj_r2 <- performance::r.squaredLR(model)
+  return(adj_r2)
+}
+
+
 #gtsave(summary_lme_fmt, 'D:/Proposal_2022/Thinning Paper/Figures/lme_summary_table.docx')
 
 
@@ -648,12 +666,6 @@ p
 orca(p, file="D:/Proposal_2022/Thinning Paper/Figures/species_cc.pdf")
 
 
-
-
-
-
-
-
 library(merDeriv)
 # GPT Model selection
 model_df <- model_df %>% filter(!is.na(vol_concave)) %>% rename(PlotID = PlotID.x)
@@ -701,7 +713,6 @@ ggplot(model_df, aes(x = mean_bai_5, y = predicted_values)) +
   geom_smooth(method = "lm", color = "red") +
   theme_classic() +
   labs(x = "Actual Values", y = "Predicted Values", title = "Model Predictions vs Actual Values")
-
 
 
 
@@ -771,5 +782,11 @@ analyze_model <- function(data, response, predictor, random_effect) {
 # Example usage
 analyze_model(data = model_df, response = "sum_bai_5", predictor = "vol_concave", random_effect = "PlotID")
 
+# Generate mean, SD, min, and max for all tree core variables
 
+summary_df <- model_df %>% select(Diameter, Z.detected, vol_concave, irr_mean, twi_mean) %>%
+  summarise_all(list(mean = mean, sd = sd, min = min, max = max))
 
+# Summarize number of cored trees by species and crown class (Species/CC)
+
+sp_cc_df <- model_df %>% group_by(Species, CC) %>% summarise(n = n())

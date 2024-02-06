@@ -38,7 +38,8 @@ generate_heygi <- TRUE
 generate_apa <- TRUE
 
 comp_input <- 'vol_concave'
-maxR <- 6
+# Compute with multiple maxR values
+maxR <- c(2,3,4,5,6,7,8,9,10,11,12,13,14,15)
 # Match Reference Stems with Closest Detected Treetops
 
 # Loop over all directories
@@ -203,16 +204,28 @@ for(i in 1:length(blocks_dir)){
 
   }
 
-  if(generate_heygi == TRUE){
 
-  heygi_ttops <- heygi_cindex(plot_ttops, comp_input = comp_input, maxR = maxR) %>%
-    st_drop_geometry() %>%
-    select(cindex, treeID) %>% filter(!is.na(treeID))
+  if (generate_heygi == TRUE) {
+    # if more than one maxR value generate unique metric for each
+    if (length(maxR) > 1) {
+      for (i in 1:length(maxR)) {
+        heygi_ttops <-
+          heygi_cindex(plot_ttops, comp_input = comp_input, maxR = maxR[i]) %>%
+          st_drop_geometry() %>%
+          select(cindex, treeID) %>% filter(!is.na(treeID))
 
-  plot_ttops <- merge(plot_ttops, heygi_ttops, by = 'treeID')
+        plot_ttops <- merge(plot_ttops, heygi_ttops, by = 'treeID')
 
+      }
 
-  }
+    } else {
+      heygi_ttops <-
+        heygi_cindex(plot_ttops, comp_input = comp_input, maxR = maxR) %>%
+        st_drop_geometry() %>%
+        select(cindex, treeID) %>% filter(!is.na(treeID))
+
+      plot_ttops <- merge(plot_ttops, heygi_ttops, by = 'treeID')
+    }
 
   if(generate_apa == TRUE){
     apa_ttops <- apa_cindex(plot_ttops, comp_input = comp_input) %>%

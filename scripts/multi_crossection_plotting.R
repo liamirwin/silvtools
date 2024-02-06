@@ -19,6 +19,9 @@ writeLAS(roi23, 'G:/Ontario_2023/Block_18/scratch/roi23.laz')
 writeLAS(roi20, 'G:/Ontario_2023/Block_18/scratch/roi20.laz')
 writeLAS(roi18, 'G:/Ontario_2023/Block_18/scratch/roi18.laz')
 
+roi23 <- readLAS('G:/Ontario_2023/Block_18/scratch/roi23.laz')
+roi20 <- readLAS('G:/Ontario_2023/Block_18/scratch/roi20.laz')
+roi18 <- readLAS('G:/Ontario_2023/Block_18/scratch/roi18.laz')
 
 # Plot cross section
 
@@ -43,7 +46,7 @@ plot_crossection <- function(las,
 plot_multi_crossection <- function(las1, las2, las3,
                                    p1 = c(min(las1@data$X), mean(las1@data$Y)),
                                    p2 = c(max(las1@data$X), mean(las1@data$Y)),
-                                   width = 4, colour_by = NULL, transect_length = NULL,
+                                   width = 4, point_size = 0.5, colour_by = NULL, transect_length = NULL,
                                    push = 0)
 {
 
@@ -68,11 +71,11 @@ plot_multi_crossection <- function(las1, las2, las3,
 
   df <- rbind(df1, df2, df3)
 
-  p <- ggplot(df, aes(X,Z, color = lidar)) + geom_point(size = 0.5) + coord_equal() + theme_minimal() +
+  p <- ggplot(df, aes(X,Z, color = lidar)) + geom_point(size = point_size) + coord_equal() + theme_minimal() +
     theme(legend.position = 'bottom')
 
   return(p)
 }
 
-plot_multi_crossection(roi23, roi20, roi18, width = 0.5, colour_by = NULL, transect_length = 2, push = 5)
+plot_multi_crossection(roi23, roi20, roi18, width = 0.5, point_size = 1, colour_by = NULL, transect_length = 2, push = 5)
 

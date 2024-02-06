@@ -54,23 +54,8 @@ mcc <- FALSE
 blocks_dir <- list.dirs('H:/Quesnel_2022/process', recursive = FALSE)
 # Omit these blocks from processing stream
 processed <- c('CT1','CT2','CT3','CT4','CT5', 'CT1-T-DAP', 'CT1-DAP')
-# target <- c('CT1')
-blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
-# blocks_dir <- blocks_dir[basename(blocks_dir) %in% target]
-blocks_dir <- 'G:/Block_18/blocks/N'
-blocks_dir <- 'I:/NZ_2023/Cass/ULS'
-blocks_dir <- 'G:/Scantiques_Roadshow/Sites/BC/Vaseux Lake/Vaseux_2017'
-blocks_dir <- list.dirs('I:/NZ_2023/Cass/MLS/plots', recursive = FALSE)
-processed <- c('PLOT_1','PLOT_2','PLOT_3', 'PLOT_4')
-blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
-blocks_dir <- "D:/scantiques_roadshow/Processing/12_Block18_N"
 
-
-blocks_dir <- 'D:/Vaseux_Lake'
-blocks_dir <- 'G:/scantiques_roadshow/Vernon'
-blocks_dir <- 'F:/Jericho/Jericho_2022_LAS'
-blocks_dir <- 'Y:/Irwin/Kantelberg_MKRF_2023/sites/nelder_trial'
-blocks_dir <- 'G:/MMF/MMF_2016'
+blocks_dir <- blocks_dir[!basename(blocks_dir) %in% processed]
 
 setup_als_dirs(blocks_dir)
 

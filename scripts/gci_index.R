@@ -1,8 +1,5 @@
 # Changes to NDGCI
 
-
-
-
 # Original Index
 
 calculate_ndgci <- function(norm_growth, norm_competition) {

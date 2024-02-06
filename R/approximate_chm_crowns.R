@@ -74,7 +74,16 @@ approximate_chm_crowns <- function(proj_dir,
 
     chm <- terra::rast(silvtools::select_file_path(chm_dir, pattern = chm_ext, ext = '.tif$'))
 
-    ttops_files <- list.files(glue::glue('{vector_output}/treetops'), pattern = '.gpkg', full.names = T)
+    # If CHM is very large load to disk by multiplying by 1
+
+    if (terra::nrow(chm) * terra::ncol(chm) > 1e9) {
+      print('CHM is very large; loading to disk...')
+      chm <- chm * 1
+    }
+
+    ttops_files <- list.files(glue::glue('{vector_output}/treetops'),
+                              pattern = '\\.(gpkg|geojson|shp)$',
+                              full.names = TRUE)
 
     ct <- round(crown_height_threshold * 100)
 
