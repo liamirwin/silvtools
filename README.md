@@ -59,4 +59,4 @@ Thank you to extensive help and code contributions from many members of
 the UBC Integrated Remote Sensing Studio (IRSS) including but not
 limited to; Martin Queinnec, Samuel Grubinger, Rik Nuijten. See [IRSS
 LAB](https://irsslab.forestry.ubc.ca) and [IRSS
-Github](https://github.com/tgoodbody/iRss) for more.
+Github](https://github.com/tgoodbody/iRss](https://github.com/IRSS-UBC)https://github.com/IRSS-UBC) for more.
