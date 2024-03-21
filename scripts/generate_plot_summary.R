@@ -214,8 +214,10 @@ for(i in 1:length(blocks_dir)){
           st_drop_geometry() %>%
           select(cindex, treeID) %>% filter(!is.na(treeID))
 
-        plot_ttops <- merge(plot_ttops, heygi_ttops, by = 'treeID')
+        colnames(heygi_ttops)[1] <- glue::glue('cindex_{maxR[i]}m')
 
+        plot_ttops <- merge(plot_ttops, heygi_ttops, by = 'treeID')
+        print(glue::glue('Calculated Heygi cindex for maxR = {maxR[i]}m radius sphere of influence')
       }
 
     } else {
@@ -729,8 +731,8 @@ for(i in 1:length(blocks_dir)){
   plot_chm <- terra::crop(chm, bbox)
   plot_ttops <- ttops %>% st_intersection(bbox_sf)
   plot_crowns <- crowns %>% st_intersection(bbox_sf)
-  plot_crowns <- silvtools::crown_mask(chunk = plot_chm, ttops = ttops, crown_height_threshold = 0.25, vis = FALSE) %>% terra::as.polygons(.) %>% sf::st_as_sf(.) %>%
-    silvtools::convert_multi_to_single_polygons(polygons = ., fill_holes = TRUE)
+  # plot_crowns <- silvtools::crown_mask(chunk = plot_chm, ttops = ttops, crown_height_threshold = 0.25, vis = FALSE) %>% terra::as.polygons(.) %>% sf::st_as_sf(.) %>%
+  #   silvtools::convert_multi_to_single_polygons(polygons = ., fill_holes = TRUE)
   ctg_norm <- catalog(glue::glue('{block_dir}/input/las/norm'))
   plot_las <- clip_roi(ctg_norm, bbox_sf)
   print('Clipped normalized las to plot extent')

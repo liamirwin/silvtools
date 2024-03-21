@@ -11,10 +11,11 @@
 #' \dontrun{
 #' c <- heygi_cindex(ttops, comp_input = 'vol_convex', maxR = 6)
 #' }
-heygi_cindex <- function(ttops, comp_input = 'vol_convex', maxR = 6){
-
+heygi_cindex <- function(ttops, comp_input = 'vol_convex', maxR = 6, quiet = FALSE){
+  # Start timer if not quiet
+  if(!quiet){
   tictoc::tic()
-
+  }
   # Convert ttops to ppp object
   trees_ppp <- ttops %>%
     dplyr::mutate(X = X, Y = Y) %>%
@@ -46,11 +47,11 @@ heygi_cindex <- function(ttops, comp_input = 'vol_convex', maxR = 6){
 
   trees_cindex <- dplyr::bind_cols(ttops, trees_cindex)
 
-
+  # Print progress if not quiet
+  if(!quiet){
   print(glue::glue('Calculated Heygi style competition for {nrow(trees_cindex)} trees assesing their {comp_input} within a {maxR}m radius'))
-
   tictoc::toc()
+  }
 
   return(trees_cindex)
-
 }

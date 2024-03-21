@@ -26,7 +26,7 @@ if ("LAS" %in% class(chunk)) {
 tree_las <- lidR::readLAS(chunk)
 }
 
-if (is.empty(tree_las)) return(NULL)
+if (lidR::is.empty(tree_las)) return(NULL)
 
 print(glue::glue('Beginning crown metric generation for chunk'))
 

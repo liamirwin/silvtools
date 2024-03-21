@@ -4,13 +4,13 @@
 #' @param chunk_buf Buffer area around each tile in meters.
 #' @param tile_size The size of each tile for processing. Default is NULL, which will use the size of the middle tile in the catalog.
 #' @param acq Acquisition name. Default is NULL.
-#' @param norm_algorithm Normalization algorithm to use. Default is tin().
+#' @param norm_algorithm Normalization algorithm to use. Default is tin(). Options are 'tin', 'knnidw', or 'dtm'.
 #' @param num_cores Number of cores for parallel processing. Default is 1.
 #' @param index_tiles Logical, should tiles be indexed? Default is TRUE.
 #' @param output_laz Logical, should the output be in LAZ format? Default is TRUE.
 #' @param k Number of neighbours for knnidw algorithm
 #' @param norm_dir Directory to write normalized tiles to; default is '{proj_dir}/input/las/norm'
-#'
+#' @param dtm_file Path to a raster file or a SpatRaster object to use for dtm normalization
 #' @return A catalog of height-normalized LAS files.
 #' @export
 #'
@@ -23,7 +23,8 @@ perform_height_normalization <- function(proj_dir,
                                          index_tiles = TRUE,
                                          output_laz = TRUE,
                                          k = 8,
-                                         norm_dir = NULL) {
+                                         norm_dir = NULL,
+                                         dtm_file = NULL) {
   tictoc::tic()
 
   # Handle parallelization
@@ -62,7 +63,7 @@ perform_height_normalization <- function(proj_dir,
   norm_dir <- glue::glue("{proj_dir}/input/las/norm")
   }
 
-  # Check if norm_dir exists, if not create it
+  # Check if norm_dir exists,   if not create it
   if (!dir.exists(norm_dir)) {
     dir.create(norm_dir, recursive = TRUE)
   }
@@ -72,6 +73,21 @@ perform_height_normalization <- function(proj_dir,
     algo <- lidR::tin()
   } else if (norm_algorithm == 'knnidw'){
     algo <- lidR::knnidw(k = k)
+  } else if (norm_algorithm == 'dtm'){
+    # Check if dtm_file NULL (default) or if user input one (path or SpatRaster)
+    if (is.null(dtm_file)) {
+      stop('dtm_file must be specified if norm_algorithm is dtm')
+    } else {
+      if (is.character(dtm_file)) {
+        dtm <- terra::rast(dtm_file)
+        algo <- dtm
+      } else if (is(dtm_file, 'SpatRaster')) {
+        dtm <- dtm_file
+        algo <- dtm
+      } else {
+        stop('dtm_file must be a path to a raster file or a SpatRaster object')
+      }
+    }
   }
 
 
@@ -84,7 +100,12 @@ perform_height_normalization <- function(proj_dir,
   print(glue::glue('Beginning normalization of {acq} lidar tiles'))
 
   # Normalize point cloud using specified algorithm
-  ctg_norm <- lidR::normalize_height(ctg_class, algorithm = algo)
+  if(norm_algorithm != 'dtm'){
+    ctg_norm <- lidR::normalize_height(ctg_class, algorithm = algo)
+  } else {
+    ctg_norm <- lidR::normalize_height(ctg_class, algorithm = algo, dtm = dtm)
+  }
+
 
   # Optionally index the normalized tiles
   if (index_tiles) {

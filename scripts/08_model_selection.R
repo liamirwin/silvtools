@@ -26,7 +26,7 @@ library(gt)
 
 # Load and clean up core tree growing condition dataframe
 
-model_df <- read.csv('G:/Quesnel_2022/Modelling/core_trees_fix4.csv') %>%
+model_df <- read.csv('G:/Quesnel_2022/Modelling/core_trees_fix_review.csv') %>%
   rename(Diameter = Diametr,
          PlotID = PlotID.x) %>%
   mutate(sum_bai_5_m2 = sum_bai_5 / 1000000,
@@ -37,15 +37,33 @@ model_df <- read.csv('G:/Quesnel_2022/Modelling/core_trees_fix4.csv') %>%
          log_vol_concave = log(vol_concave),
          log_vol_convex = log(vol_convex),
          log_irr_mean = log(irr_mean),
-         log_sum_bai_5 = log(sum_bai_5),
-         log_afree = log(afree))
+         log_sum_bai_5 = log(sum_bai_5))
 
+# Get mean/min/max/SD for each explanatory variable
+s <- model_df %>% select(sum_bai_5, vol_concave, vol_convex, irr_mean, twi_mean, cindex_vol_concave_6m, Zmax, Diameter) %>%
+  summarise(
+    across(c(sum_bai_5, vol_concave, vol_convex, irr_mean, twi_mean, cindex_vol_concave_6m, Zmax, Diameter),
+           list(mean = ~mean(.), min = ~min(.), max = ~max(.), sd = ~sd(.)),
+           .names = "{.col}_{.fn}")
+  )
+
+# Optionally, to make 'attribute' a column instead of rownames
+final_format <- tibble(attribute = rownames(long_format), long_format)
+
+# log transform all cindex and afree columns
+cols_trg <- colnames(model_df) %>% str_subset('cindex|afree')
+
+for(c in cols_trg){
+  col_log <- model_df %>% select(all_of(c))
+  col_log <- log(col_log)
+  names(col_log) <- paste0('log_', c)
+  model_df <- cbind(model_df, col_log)
+}
 
 # Filter serious outlier trees
 model_df <- model_df %>%
   filter(!(tree_id.x %in% c('CT5P3-Pl040','CT5P2-Fd027', 'CT1P2-Sx044', 'CT5P2-Fd047')) & !is.na(vol_concave))
 
-model_df_filt <- model_df
 
 plot_relationship <- function(df, xvar, yvar, groupvar=NULL, xlab=NULL, ylab=NULL, label = F) {
   # Create scatter plot with line of fit for each group in groupvar
@@ -134,7 +152,51 @@ p1 + p2 + p3 + p4
 
 model_df <- model_df_filt
 
-#model_df <- model_df %>% rename(PlotID = PlotID.x, Diameter = Diametr)
+plot_relationship(model_df,
+                  'nn_dist',
+                  "log(sum_bai_5)",
+                  xlab = 'Nearest Neighbour Distance (m)',
+                  ylab = 'Cumulative BAI (5 Year) (Log)')
+
+
+plots <- list()
+save_plots <- TRUE
+out_dir <- 'D:/Proposal_2022/Thinning Paper/Figures/cindex_testing_feb2024'
+
+for(c in cols_trg){
+  df <- model_df %>% filter(cindex_vol_concave_6m < 4 & afree_vol_convex < 1500)
+  p <- plot_relationship(df,
+                        c,"log(sum_bai_5)",
+                        xlab = c,
+                        ylab = "Cumulative BAI (5 Year) (Log)", label = F)
+  plots[[c]] <- p
+}
+
+library(ggplot2)
+
+# Function to generate and optionally save a plot
+generate_plots <- function(data, x_var, y_var = "log(sum_bai_5)", label = FALSE,
+                          out_dir = NULL, save_plots = FALSE, ylab = "Cumulative BAI (5 Year) (Log)") {
+
+  p <- plot_relationship(data, x_var, y_var, label = label) +
+    labs(x = x_var, y = ylab)
+
+  # Check if the plots should be saved
+  if (save_plots) {
+    if (!is.null(out_dir) && dir.exists(out_dir)) {
+      file_name <- paste0(out_dir, "/", x_var, "_vs_", gsub("\\(|\\)", "", y_var), ".png")
+      ggsave(file_name, plot = p, width = 10, height = 8)
+    } else {
+      warning("Output directory does not exist. Plot not saved.")
+    }
+  }
+  return(p)
+}
+data <- model_df %>% filter(cindex_vol_concave_6m < 4 & afree_vol_convex < 1500)
+plots <- lapply(cols_trg, function(c) generate_plots(data, c, out_dir = out_dir, save_plots = TRUE))
+
+cols_trg_log <- paste0("log_", cols_trg)
+plots <- lapply(cols_trg_log, function(c) generate_plots(data, c, out_dir = out_dir, save_plots = TRUE))
 
 # WITHOUT RANDOM EFFECTS
 
@@ -248,7 +310,7 @@ model_3 <- lmerTest::lmer(log_sum_bai_5 ~ log_irr_mean + (1|PlotID), data = mode
 model_4 <- lmerTest::lmer(log_sum_bai_5 ~ cindex + (1|PlotID), data = model_df)
 
 # Model 5: Freegrowing Area
-model_5 <- lmerTest::lmer(log_sum_bai_5 ~ log_afree + (1|PlotID), data = model_df)
+model_5 <- lmerTest::lmer(log_sum_bai_5 ~ log_afree_vol_concave + (1|PlotID), data = model_df)
 
 # Model 6: Topographic Wetness
 model_6 <- model_df %>% filter(!is.na(twi_mean)) %>% lmerTest::lmer(log_sum_bai_5 ~ twi_mean + (1|PlotID), data = .)
@@ -328,9 +390,6 @@ summary_lme <- summary_lme %>%
   )
 
 summary_lme
-
-
-
 
 file = "D:/Proposal_2022/Thinning Paper/Figures/model_summary_table_sept19.docx"
 
@@ -568,13 +627,13 @@ print(results_table)
 library(correlation)
 library(see)
 
-corr_df <- model_df %>% select('vol_concave','vol_convex','Zmax','n_points','cindex','CRR','Diameter','sum_bai_5')
 
+# select sum_bai_5 and any columns containing vol_concave, vol_convex, afree in column name
+corr_df <- model_df %>% select(sum_bai_5, contains("vol_concave"), contains("vol_convex"), contains("afree")) %>%
+  select(!contains('log'))
 results <- summary(correlation(corr_df))
-
-plot(results, show_data = "points") + theme_classic()
-
-
+# adjust x axis labels to be angled
+plot(results, show_data = "points") + theme_classic() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
 # Dredging (Test all possible combinations)

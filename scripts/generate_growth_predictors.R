@@ -3,27 +3,29 @@
 # Liam Irwin
 
 # ---- Load Packages ----
-
-library(sf)
-library(dplyr)
-library(tidyverse)
-library(terra)
-library(tmap)
-library(plotly)
-library(silvtools)
-library(lidR)
-library(siplab)
+library(sf) # For vector data processing
+library(tidyverse) # For data manipulation
+library(terra) # For raster processing
+library(tmap) # For thematic maps
+library(plotly) # For interactive plots
+library(silvtools) # For custom functions
+library(lidR) # For lidar processing
+library(siplab) # For heygi and afree calculations
+library(nngeo) # For nearest neighbour analysis
 # ---- Processing Setup ----
 plots_dir <- 'G:/Quesnel_2022/plot_summary/plots'
 process_dir <- 'G:/Quesnel_2022/process'
 blocks_dir <- list.dirs(plots_dir, recursive = FALSE)
-
 # Area around plot stems to crop CHM to
 chm_radius <- 10
 coords <- 26910
 # Output lists for matching and plotting
 matches <- list()
+matches_sf <- list()
+scores <- list()
 tmap_plots <- list()
+# Should results be written to disk?
+write_results <- TRUE
 # Generate tmap validation plots? - Takes some time
 plot_result <- FALSE
 # Should irradiance rasters be generated for each plot? - Takes some time
@@ -36,12 +38,19 @@ extract_twi = TRUE
 generate_heygi <- TRUE
 # Generate Area Potentially Avaliable Index
 generate_apa <- TRUE
+# Calculate distance to nearest neighbouring tree top
+generate_nn <- TRUE
 # Decimate points before alphashapes are computed?
 decimate <- FALSE
+v_res <- 1
+v_n <- 3
+# Set crown height threshold to limit watershed segmentation extent
+crown_height_threshold <- 0.70
 
-
-comp_input <- 'vol_concave'
-maxR <- 6
+# Set up competition index inputs
+# Tree size metric(s) used to compute cindex
+comp_input <- c('vol_concave','vol_convex')
+maxR <- c(2,3,4,5,6,7,8,9,10,11,12,13,14,15)
 # Match Reference Stems with Closest Detected Treetops
 
 # Loop over all directories
@@ -112,11 +121,17 @@ for(i in 1:length(blocks_dir)){
   bbox_sf <- st_as_sf(vect(bbox))
   st_crs(bbox_sf) <- st_crs(ttops)
 
+  # Crop CHM, treetops and crowns to plot extent
   plot_chm <- terra::crop(chm, bbox)
   plot_ttops <- ttops %>% st_intersection(bbox_sf)
   plot_crowns <- crowns %>% st_intersection(bbox_sf)
-  plot_crowns <- silvtools::crown_mask(chunk = plot_chm, ttops = ttops, crown_height_threshold = 0.25, vis = FALSE) %>% terra::as.polygons(.) %>% sf::st_as_sf(.) %>%
-    silvtools::convert_multi_to_single_polygons(polygons = ., fill_holes = TRUE)
+  # Generate watershed segmentations limited to crown height threshold
+  plot_crowns <- silvtools::crown_mask(chunk = plot_chm,
+                                       ttops = plot_ttops,
+                                       crown_height_threshold = crown_height_threshold,
+                                       vis = FALSE) %>%
+    terra::as.polygons(.) %>% sf::st_as_sf(.) %>%
+  silvtools::convert_multi_to_single_polygons(polygons = ., fill_holes = TRUE)
   ctg_norm <- catalog(glue::glue('{block_dir}/input/las/norm'))
   plot_las <- clip_roi(ctg_norm, bbox_sf)
   print('Clipped normalized las to plot extent')
@@ -152,7 +167,7 @@ for(i in 1:length(blocks_dir)){
 
 
   if(decimate == TRUE){
-  tree_las <- decimate_points(tree_las, random_per_voxel(res = 0.05, n = 1))
+  tree_las <- decimate_points(tree_las, random_per_voxel(res = v_res, n = v_n))
   print(glue::glue('Decimated Tree LAS with 5cm voxel'))
 
   }
@@ -164,7 +179,7 @@ for(i in 1:length(blocks_dir)){
 
   # Join plot_ttops with only the new columns from plot_ashapes
   plot_ttops <- plot_ttops %>%
-    left_join(plot_ashapes %>% select(c("treeID", new_cols)), by = "treeID")
+    left_join(plot_ashapes %>% select(all_of(c("treeID", new_cols))), by = "treeID")
 
 
   if(generate_insol == TRUE){
@@ -212,7 +227,6 @@ for(i in 1:length(blocks_dir)){
   insol_file <- stringr::str_subset(list.files(glue::glue('{proj_dir}/output/raster/irradiance'), pattern = '.tif', full.names = T), pattern = 'mean')
   # If mean irradiance raster found and extraction requested, perform extraction
   if(length(insol_file) == 0){
-
     print(glue::glue('No mean irradiance raster was found in {proj_dir}/output/raster/irradiance, consider rerunning with generate_insol = TRUE'))
     extract_insol <- FALSE
     print(glue::glue('Skipping insolation extraction since no raster was found'))
@@ -254,29 +268,70 @@ for(i in 1:length(blocks_dir)){
 
   plot_ttops <- plot_ttops %>% filter(!is.na(X) | !is.na(Y))
 
-  if(generate_heygi == TRUE){
+  if (generate_heygi == TRUE) {
+      # if more than one comp_input value generate unique metric for each
+      for(k in 1:length(comp_input)){
+        # Generate Heygi cindex for each comp_input value
+        c_input <- comp_input[k]
+        # Generate Heygi cindex for each maxR value
+        for (r in 1:length(maxR)) {
+          heygi_ttops <-
+            heygi_cindex(plot_ttops, comp_input = comp_input, maxR = maxR[r]) %>%
+            st_drop_geometry() %>%
+            select(cindex, treeID) %>% filter(!is.na(treeID))
 
-    heygi_ttops <- heygi_cindex(plot_ttops, comp_input = comp_input, maxR = maxR) %>%
-      st_drop_geometry() %>%
-      select(cindex, treeID) %>% filter(!is.na(treeID))
+          colnames(heygi_ttops)[1] <- glue::glue('cindex_{c_input}_{maxR[r]}m')
 
-    plot_ttops <- merge(plot_ttops, heygi_ttops, by = 'treeID')
-
+          plot_ttops <- merge(plot_ttops, heygi_ttops, by = 'treeID')
+          print(glue::glue('Calculated Heygi cindex based on {c_input} for maxR = {maxR[r]}m radius sphere of influence'))
+        }
+        print(glue::glue('Calculated Heygi cindex based on {c_input} for all maxR values'))
+      }
   }
 
   if(generate_apa == TRUE){
-   plot_ttops$afree <- apa_cindex(plot_ttops, comp_input = comp_input) %>%
-      st_drop_geometry() %>%
-       select(afree)
 
-   }
+    for(n in 1:length(comp_input)){
+      # Generate APA cindex for each comp_input value
+      afree_ttops <- apa_cindex(plot_ttops, comp_input = comp_input[n]) %>%
+        st_drop_geometry() %>%
+        select(afree)
+      colnames(afree_ttops)[1] <- glue::glue('afree_{comp_input[n]}')
+      plot_ttops <- cbind(plot_ttops, afree_ttops)
+      print(glue::glue('Calculated APA cindex based on {comp_input[n]}'))
+    }
+  }
+
+  if(generate_nn){
+    # Generate nearest neighbour distance
+    nn_ttops <- nngeo::st_nn(plot_ttops, plot_ttops, k = 2, returnDist = TRUE)
+    nn_dist <- nn_ttops[[2]] %>% do.call(rbind, .) %>% as.data.frame() %>% select(V2) %>%
+      rename(nn_dist = V2)
+    plot_ttops$nn_dist <- nn_dist
+    print('Calculated nearest neighbour distance')
+  }
 
   # Perform tree matching and score results
   matches[[i]] <- tree_matching(plot_stems, plot_ttops, plot_name)
-  score <- tree_matching_scores(matches[[i]]) %>% mutate(PlotID = plot_name)
+
+  matches_sf[[i]] <- matches[[i]] %>% filter(!is.na(X) &!is.na(Y)) %>%
+    st_as_sf(coords = c('X', 'Y'), crs = st_crs(plot_ttops))
+
+  scores[[i]] <- tree_matching_scores(matches[[i]]) %>% mutate(PlotID = plot_name)
 
   # Return the score
-  score
+  score[[i]]
+
+  # Write matches df locally
+  if(write_results){
+  dir.create(glue::glue('{proj_dir}/output/matches'), showWarnings = F)
+  dir.create(glue::glue('{proj_dir}/output/matches/scores'), showWarnings = F)
+  dir.create(glue::glue('{proj_dir}/output/matches/sf'), showWarnings = F)
+  dir.create(glue::glue('{proj_dir}/output/matches/csv'), showWarnings = F)
+
+  write.csv(scores[[i]], glue::glue('{proj_dir}/output/matches/scores/{plot_name}_scores_cht{crown_height_threshold}.csv'), append = F)
+  st_write(matches_sf[[i]], glue::glue('{proj_dir}/output/matches/sf/{plot_name}_matches_cht{crown_height_threshold}.gpkg'), append = F)
+  }
 
 }
 
@@ -287,4 +342,4 @@ matches_df <- matches_df %>% filter(!is.na(TreeNum))
 
 core_trees <- matches_df %>% dplyr::filter(!is.na(mean_bai_5) & !is.na(vol_concave))
 
-write.csv(st_drop_geometry(core_trees),'G:/Quesnel_2022/Modelling/core_trees_fix4.csv')
+write.csv(st_drop_geometry(core_trees),'G:/Quesnel_2022/Modelling/core_trees_fix_review.csv')

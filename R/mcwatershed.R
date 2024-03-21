@@ -24,6 +24,12 @@ mcwatershed <-function(chm, treetops, th_tree = 2, tree_id = "treeID")
     Canopy[mask] <- 0
 
     cells <- terra::cellFromXY(chm, sf::st_coordinates(treetops)[, c(1, 2)])
+
+    # check cells for NA values this indicates that ttops and chm to not overlap completely
+    if (any(is.na(cells))) {
+      stop("treetops and chm do not overlap completely")
+    }
+
     # ids <- seq_along(cells)
     ids <- dplyr::pull(treetops, tree_id)
 
