@@ -9,6 +9,7 @@
 #' @param summary_var The name of the variable to summarize (default is 'cindex').
 #' @param summary_fun The summary function to apply (default is 'mean').
 #' @param count_trees Logical argument to count tree tops per cell or not (default is false)
+#' @param by_species Logical argument; if TRUE, summarization will be grouped by a cateogrical column: 'species' result will be summary variable for each species
 #' @return An SF object with the same CRS as the input data, containing the summarized variable for each grid cell.
 #' @export
 #'
@@ -33,7 +34,7 @@
 #' }
 summarize_grid <- function(points_sf, grid_area = 400, grid_shape = 'square',
                            summary_var = 'cindex', summary_fun = 'mean',
-                           count_trees = FALSE) {
+                           count_trees = FALSE, by_species = FALSE) {
 
   # Set cell size based on grid_area and grid_shape
   if (grid_shape == 'square') {
@@ -66,12 +67,23 @@ summarize_grid <- function(points_sf, grid_area = 400, grid_shape = 'square',
   # Assign grid cell id to each point
   points_sf$grid_id <- as.character(st_within(points_sf, grid))
 
+  
+  
+  if(by_species){
+    # Calculate summary metric for each species group
+    summaries <- points_sf %>%
+    group_by(grid_id, species) %>%
+    summarize(across(all_of(summary_var), match.fun(summary_fun), .names = paste0(summary_fun, "_", summary_var)),
+              n_trees = if(count_trees) n() else NULL,
+              .groups = 'drop') %>% sf::st_drop_geometry()
+  } else{
   # Group points by grid_id and calculate summary statistics
   summaries <- points_sf %>%
     group_by(grid_id) %>%
     summarize(across(all_of(summary_var), match.fun(summary_fun), .names = paste0(summary_fun, "_", summary_var)),
               n_trees = if(count_trees) n() else NULL,
               .groups = 'drop') %>% sf::st_drop_geometry()
+  }
 
   # Convert grid to sf data frame and add id column
   grid_sf <- sf::st_sf(geometry = grid)
