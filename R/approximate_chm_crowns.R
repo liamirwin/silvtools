@@ -4,6 +4,15 @@
 #'
 #' @param proj_dir A string specifying the project directory.
 #' @param chm_dir A string specifying the raster output directory. Default is NULL.
+#' @param vector_output A string specifying the vector output directory. Default is NULL.
+#' @param raster_output A string specifying the raster output directory. Default is NULL.
+#' @param crown_methods A character vector specifying the crown segmentation methods to use. Default is c('fixed', 'auto', 'variable').
+#' @param hmin A numeric specifying the minimum height of a tree. Default is 1.
+#' @param crown_height_threshold A numeric specifying the threshold for crown height. Default is 0.25.
+#' @param vis A logical specifying whether to visualize the segmentation results. Default is FALSE.
+#' @param chm_ext A string specifying the extension of the CHM file. Default is 'smooth'.
+#' @param window_size A numeric specifying the window size for the segmentation method. Default is NULL.
+#'
 #' @return A list containing the results of each segmentation method.
 #' @examples
 #' \dontrun{

@@ -8,10 +8,15 @@ generate_pixel_metrics(
   proj_dir,
   res = 1,
   metrics = c("basic"),
-  zmin = NA,
+  zmin = NULL,
   num_cores = 1L,
   chunk_buf = NULL,
-  acq = NULL
+  acq = NULL,
+  ctg_norm = NULL,
+  mets_output_dir = NULL,
+  abs = TRUE,
+  SA_attribute = "ScanAngle",
+  is_rads = FALSE
 )
 }
 \arguments{
@@ -19,7 +24,7 @@ generate_pixel_metrics(
 
 \item{res}{CHM resolution in meters. Default is 1.}
 
-\item{metrics}{Sets of metrics to generate. Default is 'basic'. 'percentiles'}
+\item{metrics}{Sets of metrics to generate. Default is 'basic'. 'percentiles' and 'scan angle' are also available.}
 
 \item{zmin}{Minimum Z value of points to consider in metrics. Default NA but EFI's often use 2m}
 
@@ -28,6 +33,16 @@ generate_pixel_metrics(
 \item{chunk_buf}{Chunk buffer size in meters. Default is 5\% of tile size.}
 
 \item{acq}{Acquisition name. Default is NULL.}
+
+\item{ctg_norm}{Catalog of normalized LAS files. Default is NULL which will use the normalized LAS files in the proj_dir.}
+
+\item{mets_output_dir}{Directory to save metrics. Default is NULL which will save to proj_dir.}
+
+\item{abs}{Boolean to determine if absolute values should be used for Scan Angle metrics. Default is TRUE.}
+
+\item{SA_attribute}{Scan angle attribute name. Default is 'ScanAngle'.}
+
+\item{is_rads}{Boolean to determine if Scan Angle values are in radians. Default is FALSE.}
 }
 \value{
 Saves lidar pixel metrics locally within proj_dir

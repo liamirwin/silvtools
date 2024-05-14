@@ -3,6 +3,7 @@
 #' @param ttops tree tops object; expects an X.detected, Y.detected column, typically from silvtools::tree_matching() function
 #' @param comp_input string value indicating competition index input; traditionally DBH/Height, we test crown structural metrics
 #' @param maxR radius of sphere of influence; treetops within this radius will be included in the calculation of cindex
+#' @param quiet logical; if TRUE, suppresses progress messages
 #'
 #' @return returns original ttops dataset (sf/dataframe) with new cindex column
 #' @export

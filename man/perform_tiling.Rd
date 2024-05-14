@@ -11,7 +11,8 @@ perform_tiling(
   index_tiles = TRUE,
   output_laz = TRUE,
   num_cores = 1L,
-  acq = NULL
+  acq = NULL,
+  tile_dir = NULL
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ perform_tiling(
 \item{num_cores}{Number of cores for parallel processing.}
 
 \item{acq}{Acquisition name.}
+
+\item{tile_dir}{Directory where las tiles are written; default is '{proj_dir}/input/las/tile'}
 }
 \value{
 A catalog of tiled LAS files.

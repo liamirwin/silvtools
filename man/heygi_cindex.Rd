@@ -4,7 +4,7 @@
 \alias{heygi_cindex}
 \title{Calculate Heygi Style Competition Indicies}
 \usage{
-heygi_cindex(ttops, comp_input = "vol_convex", maxR = 6)
+heygi_cindex(ttops, comp_input = "vol_convex", maxR = 6, quiet = FALSE)
 }
 \arguments{
 \item{ttops}{tree tops object; expects an X.detected, Y.detected column, typically from silvtools::tree_matching() function}
@@ -12,6 +12,8 @@ heygi_cindex(ttops, comp_input = "vol_convex", maxR = 6)
 \item{comp_input}{string value indicating competition index input; traditionally DBH/Height, we test crown structural metrics}
 
 \item{maxR}{radius of sphere of influence; treetops within this radius will be included in the calculation of cindex}
+
+\item{quiet}{logical; if TRUE, suppresses progress messages}
 }
 \value{
 returns original ttops dataset (sf/dataframe) with new cindex column

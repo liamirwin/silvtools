@@ -12,15 +12,35 @@
 #' @examples
 #' \dontrun{
 #'
-#' dsm_file <- 'H:/Quesnel_2022/blocks/CT1-DAP/output/raster/dsm/CT1-DAP_dsm_fill_p2r_0.05m.tif'
-#' proj_dir <- 'H:/Quesnel_2022/blocks/CT1-DAP'
-#' site_name <- 'CT1-DAP'
-#' aoi_file <- 'H:/Quesnel_2022/blocks/CT1-DAP/input/vector/CT1P1_buffer.shp'
+#' # Example of running solar simulator on a sample DSM
 #'
+#' # Load sample Megaplot data
+#' lasfile <- system.file("extdata", "Megaplot.laz", package = "lidR")
+#' las <- readLAS(lasfile)
+#'
+#' # Set up project directory and site name
+#' proj_dir <- tempdir()
+#' site_name <- 'megaplot_ex'
+#'
+#' # Generate DSM and save to file
+#' dsm <- rasterize_canopy(las, res = 5)
+#' dsm_file <- file.path(proj_dir, paste0(site_name,'_dsm.tif'))
+#' writeRaster(dsm, dsm_file)
+#'
+#' # Set up solar position data
+#' ext_sf <- ext(dsm) %>% vect(crs = crs(dsm)) %>% st_as_sf() %>% st_transform(4326)
+#' coords <- st_coordinates(ext_sf)[1,]
+#' lat <- as.numeric(coords[2])
+#' lon <- as.numeric(coords[1])
+#' start_date <- as.POSIXct("2022-09-15 08:00:00", tz = "America/Los_Angeles")
+#' end_date <- as.POSIXct("2022-09-15 10:00:00", tz = "America/Los_Angeles")
+#' interval <- '10 min'
+#'
+#' # Grab sun position data
 #' sun_pos <- get_solar_pos(start_date, end_date, interval, lat, lon)
+#' # Perform solar simulation across timepoints
 #' solar_simulator(dsm_file, proj_dir, site_name, aoi_file, sun_pos)
 #' }
-#'
 solar_simulator <- function(dsm_file,
                             proj_dir,
                             site_name,
@@ -36,10 +56,10 @@ solar_simulator <- function(dsm_file,
     } else{
       aoi <- sf::st_read(aoi_file)
     }
-    dsm <- terra::rast(dsm_file) %>% terra::crop(terra::vect(aoi)) %>% raster::raster(.)
+    dsm <- terra::rast(dsm_file) %>% terra::crop(terra::vect(aoi))
     print('DSM cropped to provided area of interest')
   } else{
-    dsm <- raster::raster(dsm_file)
+    dsm <- terra::rast(dsm_file)
     print('DSM raster successfully loaded')
   }
   # Convert to matrix for rayshader
@@ -73,13 +93,6 @@ solar_simulator <- function(dsm_file,
       run_parallel = FALSE
     }
 
-
-    if(num_cores > 1){
-      run_parallel = TRUE
-    } else{
-      run_parallel = FALSE
-    }
-
     zscale = terra::res(dsm)[1]
 
     rshade= rayshader::ray_shade(
@@ -91,21 +104,21 @@ solar_simulator <- function(dsm_file,
       multicore = run_parallel)
 
     rshade <- t(rshade)
-    rshade<-rshade[,c(ncol(rshade):1),drop = FALSE]
+    rshade <- rshade[,c(ncol(rshade):1),drop = FALSE]
 
-    ras2 = raster::raster(rshade)
-    ras2@file <- raster::raster(dsm)@file # Change metadata
-    ras2@legend <- raster::raster(dsm)@legend
-    ras2@extent <- raster::raster(dsm)@extent
-    ras2@rotation <- raster::raster(dsm)@rotation
-    ras2@crs <- raster::raster(dsm)@crs
-    raster::writeRaster(
-      ras2,
+    rshade_rast <- terra::rast(rshade)
+    terra::crs(rshade_rast) <- terra::crs(dsm)
+    terra::ext(rshade_rast) <- terra::ext(dsm)
+    names(rshade_rast) <- 'irr'
+
+    terra::writeRaster(
+      rshade_rast,
       glue::glue(
         '{proj_dir}/output/raster/irradiance/{site_name}/{site_name}_{timepoint$date}-{timepoint$hour}hr-{timepoint$min}min_rayshade.tif'
       ),
       overwrite = T
     )
+
     tictoc::toc()
   }
 }

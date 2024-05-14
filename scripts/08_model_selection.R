@@ -118,6 +118,18 @@ p1 <- plot_relationship(model_df,
                         xlab = 'Crown Volume (Log)',
                         ylab = 'Cumulative BAI (5 Year) (Log)', label = F)
 
+
+# IN THIS DF Concave = CONVEX hull volume
+model_df <- model_df %>% rename(cindex = cindex_vol_concave_6m)
+
+
+p1 <- plot_relationship(model_df,
+                        'log(vol_concave)',
+                        "log(sum_bai_5)",
+                        "Species",
+                        xlab = 'Crown Volume (Log)',
+                        ylab = 'Cumulative BAI (5 Year) (Log)')
+
 p2 <- model_df  %>% mutate(log_cindex = log(cindex)) %>%
   filter(log_cindex < 4) %>% plot_relationship(.,
                         'log_cindex',
@@ -127,20 +139,13 @@ p2 <- model_df  %>% mutate(log_cindex = log(cindex)) %>%
   scale_x_continuous(limits = c(0, NA))
 
 
-p2 <- plot_relationship(model_df,
-                  'log(vol_concave)',
-                  "log(sum_bai_5)",
-                  "Species",
-                  xlab = 'Crown Volume (Log)',
-                  ylab = 'Cumulative BAI (5 Year) (Log)')
-
-p3 <- plot_relationship(model_df_filt,
+p3 <- plot_relationship(model_df,
                         'log(vol_concave)',
                         "log(sum_bai_5)",
                         xlab = 'Crown Volume (Log)',
                         ylab = 'Cumulative BAI (5 Year) (Log)', label = F)
 
-p4 <- plot_relationship(model_df_filt,
+p4 <- plot_relationship(model_df,
                         'log(vol_concave)',
                         "log(sum_bai_5)",
                         "Species",
@@ -149,8 +154,6 @@ p4 <- plot_relationship(model_df_filt,
 
 
 p1 + p2 + p3 + p4
-
-model_df <- model_df_filt
 
 plot_relationship(model_df,
                   'nn_dist',
@@ -310,34 +313,34 @@ model_3 <- lmerTest::lmer(log_sum_bai_5 ~ log_irr_mean + (1|PlotID), data = mode
 model_4 <- lmerTest::lmer(log_sum_bai_5 ~ cindex + (1|PlotID), data = model_df)
 
 # Model 5: Freegrowing Area
-model_5 <- lmerTest::lmer(log_sum_bai_5 ~ log_afree_vol_concave + (1|PlotID), data = model_df)
+# model_5 <- lmerTest::lmer(log_sum_bai_5 ~ log_afree_vol_concave + (1|PlotID), data = model_df)
 
 # Model 6: Topographic Wetness
-model_6 <- model_df %>% filter(!is.na(twi_mean)) %>% lmerTest::lmer(log_sum_bai_5 ~ twi_mean + (1|PlotID), data = .)
+model_5 <- model_df %>% filter(!is.na(twi_mean)) %>% lmerTest::lmer(log_sum_bai_5 ~ twi_mean + (1|PlotID), data = .)
 
 # Model 7: bai vs tree height with plot random effect
-model_7 <- lmerTest::lmer(log_sum_bai_5 ~ Zmax + (1|PlotID), data = model_df)
+model_6 <- lmerTest::lmer(log_sum_bai_5 ~ Zmax + (1|PlotID), data = model_df)
 
 # Model 8: Vol Concave plus Vol Convex
-model_8 <- lmerTest::lmer(log_sum_bai_5 ~ log_vol_convex + log_vol_concave + (1|PlotID), data = model_df)
+model_7 <- lmerTest::lmer(log_sum_bai_5 ~ log_vol_concave + log_vol_convex + (1|PlotID), data = model_df)
 
 # Model 9: Vol concave plus irradiance
-model_9 <- lmerTest::lmer(log_sum_bai_5 ~ log_vol_concave + log_irr_mean + (1|PlotID), data = model_df)
+model_8 <- lmerTest::lmer(log_sum_bai_5 ~ log_vol_concave + log_irr_mean + (1|PlotID), data = model_df)
 
 # Model 10: Vol Concave plus competition
-model_10 <- lmerTest::lmer(log_sum_bai_5 ~ log_vol_concave + cindex + (1|PlotID), data = model_df)
+model_9 <- lmerTest::lmer(log_sum_bai_5 ~ log_vol_concave + cindex + (1|PlotID), data = model_df)
 
 # Model 11: Vol concave plus height
-model_11 <- lmerTest::lmer(log_sum_bai_5 ~ log_vol_concave + Zmax + (1|PlotID), data = model_df)
+model_10 <- lmerTest::lmer(log_sum_bai_5 ~ log_vol_concave + Zmax + (1|PlotID), data = model_df)
 
 # Model 12: Vol Concave plus free growing area
-model_12 <- lmerTest::lmer(log_sum_bai_5 ~ log_vol_concave + log_afree + (1|PlotID), data = model_df)
+# model_11 <- lmerTest::lmer(log_sum_bai_5 ~ log_vol_concave + log_afree + (1|PlotID), data = model_df)
 
 # Model 13:
-model_13 <- lmerTest::lmer(log_sum_bai_5 ~ log_vol_concave + irr_mean + log_irr_mean + cindex + (1|PlotID), data = model_df)
+# model_12 <- lmerTest::lmer(log_sum_bai_5 ~ log_vol_concave + irr_mean + log_irr_mean + cindex + (1|PlotID), data = model_df)
 
 # Model 14 - Field Variables
-model_14 <- lmerTest::lmer(log_sum_bai_5 ~ Diameter + (1|PlotID), data = model_df)
+model_11 <- lmerTest::lmer(log_sum_bai_5 ~ Diameter + (1|PlotID), data = model_df)
 
 
 models <- list(
@@ -351,10 +354,7 @@ models <- list(
   "Model 8" = model_8,
   "Model 9" = model_9,
   "Model 10" = model_10,
-  "Model 11" = model_11,
-  "Model 12" = model_12,
-  "Model 13" = model_13,
-  "Model 14" = model_14
+  "Model 11" = model_11
 )
 
 summary_lme <- modelsummary(models,
@@ -365,9 +365,9 @@ summary_lme <- modelsummary(models,
 
 
 summary_lme <- summary_lme %>%
-  tab_spanner(label = md('**Single Variable Models**'), columns = 2:8) %>%
-  tab_spanner(label = md('**Multi-variable Models**'), columns = 9:14) %>%
-  tab_spanner(label = md('**Field Measured Diameter**'), columns = 15) %>%
+  tab_spanner(label = md('**Single Variable Models**'), columns = 1:7) %>%
+  tab_spanner(label = md('**Multi-variable Models**'), columns = 8:11) %>%
+  tab_spanner(label = md('**Field Measured Diameter**'), columns = 12) %>%
   tab_options(
     table.font.size = px(14),
     table.font.names = "Times New Roman",
@@ -378,14 +378,14 @@ summary_lme <- summary_lme %>%
     style = cell_text(weight = "bold"),
     locations = cells_body(
       columns = c('Model 1'),
-      rows = c(25,26,27)
+      rows = c(25)
     )
   ) %>%
   tab_style(
     style = cell_fill(color = "gray", alpha = 0.3),
     locations = cells_body(
       columns = c('Model 1'),
-      rows = c(25,26,27)
+      rows = c(25)
     )
   )
 
@@ -517,7 +517,7 @@ library(Matrix)
 
 
 
-cross_validate_model <- function(formula, data, n_folds = 10, target_variable = 'log_sum_bai_5'){
+cross_validate_lme <- function(formula, data, n_folds = 10, target_variable = 'log_sum_bai_5'){
 
   formula <- as.formula(formula)
 
@@ -526,6 +526,9 @@ cross_validate_model <- function(formula, data, n_folds = 10, target_variable = 
 
   # Create vectors to hold the results of each fold
   rmse_results <- c()
+  rmse_percent_results <- c()
+  rmse_exp_results <- c()
+  rmse_exp_percent_results <- c()
   rsquared_cond_results <- c()
   rsquared_marg_results <- c()
   ef_results <- c()  # Vector to hold EF results
@@ -539,11 +542,22 @@ cross_validate_model <- function(formula, data, n_folds = 10, target_variable = 
     trainSet <- data[folds != i,]
     testSet  <- data[folds == i,]
 
+    # Get mean value of test Set
+    mean_test <- mean(testSet[, target_variable])
+
     # Train the mixed-effects model
     model <- lmerTest::lmer(formula, data = trainSet, REML = FALSE)
 
     # Test the model on the test set
     predictions <- predict(model, newdata = testSet, re.form=NA)
+
+    # Back transform predictions
+    predictions_exp <- exp(predictions)
+    actual_exp <- exp(testSet[, target_variable])
+
+    # Calculate back transformed RMSE as percentage of Test Set Mean
+    rmse_exp <- sqrt(mean((predictions_exp - actual_exp)^2))
+    rmse_exp_p <- rmse_exp / mean(actual_exp) * 100
 
     # Evaluate its performance
     perf <- performance::model_performance(model, test_data = testSet)
@@ -558,8 +572,14 @@ cross_validate_model <- function(formula, data, n_folds = 10, target_variable = 
     # Model Bias
     bias = sum(observed - predictions) / length(observed)
 
+    # Calculate RMSE as percentage of Test Set Mean
+    rmse_percent <- perf$RMSE / mean_test * 100
+
     # Store the results
     rmse_results <- c(rmse_results, perf$RMSE)
+    rmse_percent_results <- c(rmse_percent_results, rmse_percent)
+    rmse_exp_results <- c(rmse_exp_results, rmse_exp)
+    rmse_exp_percent_results <- c(rmse_exp_percent_results, rmse_exp_p)
     rsquared_cond_results <- c(rsquared_cond_results, perf$R2_conditional)
     rsquared_marg_results <- c(rsquared_marg_results, perf$R2_marginal)
     ef_results <- c(ef_results, EF)  # Store EF result
@@ -569,6 +589,9 @@ cross_validate_model <- function(formula, data, n_folds = 10, target_variable = 
 
   # Average the results
   avg_rmse <- mean(rmse_results)
+  avg_rmse_percent <- mean(rmse_percent_results)
+  avg_rmse_exp <- mean(rmse_exp_results)
+  avg_rmse_exp_percent <- mean(rmse_exp_percent_results)
   avg_marg_rsquared <- mean(rsquared_marg_results)
   avg_cond_rsquared <- mean(rsquared_cond_results)
   avg_mae <- mean(mae_results)
@@ -578,6 +601,9 @@ cross_validate_model <- function(formula, data, n_folds = 10, target_variable = 
   results_df <- data.frame(
     formula = deparse(formula),
     avg_rmse = avg_rmse,
+    avg_rmse_percent = avg_rmse_percent,
+    avg_rmse_exp = avg_rmse_exp,
+    avg_rmse_exp_percent = avg_rmse_exp_percent,
     avg_marg_rsquared = avg_marg_rsquared,
     avg_cond_rsquared = avg_cond_rsquared,
     avg_mae = avg_mae,
@@ -586,7 +612,9 @@ cross_validate_model <- function(formula, data, n_folds = 10, target_variable = 
   )
 
   # Print the average performance
-  print(c("Average RMSE" = avg_rmse, "Average Marginal Rsquared" = avg_marg_rsquared, "Average Conditional Rsquared" = avg_cond_rsquared,
+  print(c("Average RMSE" = avg_rmse, "Average Percent RMSE" = avg_rmse_percent, "Average RMSE Exp" = avg_rmse_exp,
+          "Average Percent RMSE Exp" = avg_rmse_exp_percent,
+          "Average Marginal Rsquared" = avg_marg_rsquared, "Average Conditional Rsquared" = avg_cond_rsquared,
           "Average MAE" = avg_mae, "Average EF" = avg_ef, "Average Bias" = avg_bias))  # Print avg_ef and avg_bias
 
   # Return the average performance
@@ -594,10 +622,120 @@ cross_validate_model <- function(formula, data, n_folds = 10, target_variable = 
 }
 
 
-results <- cross_validate_model("log_sum_bai_5 ~ log_vol_concave + (1|PlotID)", model_df, n_folds = 10)
+results <- cross_validate_lme("log_sum_bai_5 ~ log_vol_concave + (1|PlotID)", model_df, n_folds = 10)
+
+# Cross validate only the fixed effect model
+
+cross_validate_lm <- function(formula, data, n_folds = 10, target_variable = 'log_sum_bai_5'){
+
+  formula <- as.formula(formula)
+
+  # Set seed for reproducibility
+  set.seed(123)
+
+  # Create vectors to hold the results of each fold
+  rmse_results <- c()
+  rmse_percent_results <- c()
+  rmse_exp_results <- c()
+  rmse_exp_p_results <- c()
+  test_mean <- c()
+  rsquared_results <- c()
+  adj_rsquared_results <- c()
+  mae_results <- c()
+  ef_results <- c()  # Vector to hold EF results
+  bias_results <- c()  # Vector to hold Bias results
+
+  # Perform n_folds-fold cross-validation manually
+  folds <- sample(1:n_folds, size = nrow(data), replace = TRUE)
+
+  for(i in 1:n_folds){
+    # Split the data into a training set and a test set
+    trainSet <- data[folds != i,]
+    testSet  <- data[folds == i,]
+
+    # Train the mixed-effects model
+    model <- lm(formula, data = trainSet)
+
+    # Test the model on the test set
+    predictions <- predict(model, newdata = testSet)
+
+    # Evaluate its performance
+    perf <- performance::model_performance(model, test_data = testSet)
+
+    # Back transform predictions
+    predictions_exp <- exp(predictions)
+    actual_exp <- exp(testSet[, target_variable])
+
+    # Calculate back transformed RMSE as percentage of Test Set Mean
+    rmse_exp <- sqrt(mean((predictions_exp - actual_exp)^2))
+    rmse_exp_p <- rmse_exp / mean(actual_exp) * 100
+
+    # Model Efficiency
+    observed = testSet[, target_variable]
+    mean_observed = mean(observed)
+    numerator = sum((observed - predictions)^2)
+    denominator = sum((observed - mean_observed)^2)
+    EF = 1 - (numerator / denominator)
+
+    # Model Bias
+    bias = sum(observed - predictions) / length(observed)
+
+    # Store the results
+    rmse_results <- c(rmse_results, perf$RMSE)
+    rmse_percent_results <- c(rmse_percent_results, rmse_exp_p)
+    rmse_exp_results <- c(rmse_exp_results, rmse_exp)
+    rmse_exp_p_results <- c(rmse_exp_p_results, rmse_exp_p)
+    test_mean <- c(test_mean, mean(actual_exp))
+    rsquared_results <- c(rsquared_results, perf$R2)
+    adj_rsquared_results <- c(adj_rsquared_results, perf$R2_adjusted)
+    mae_results <- c(mae_results, perf$MAE)
+    ef_results <- c(ef_results, EF)  # Store EF result
+    bias_results <- c(bias_results, bias)  # Store Bias result
 
 
+  }
 
+  # Average the results
+  avg_rmse <- mean(rmse_results)
+  avg_rmse_percent <- mean(rmse_percent_results)
+  avg_rmse_exp <- mean(rmse_exp_results)
+  avg_rmse_exp_p <- mean(rmse_exp_p_results)
+  avg_test_mean <- mean(test_mean)
+  avg_rsquared <- mean(rsquared_results)
+  avg_adj_rsquared <- mean(adj_rsquared_results)
+  avg_mae <- mean(mae_results)
+  avg_ef <- mean(ef_results)  # Average EF
+  avg_bias <- mean(bias_results)  # Average Bias
+
+  results_df <- data.frame(
+    formula = deparse(formula),
+    avg_rmse = avg_rmse,
+    avg_rmse_percent = avg_rmse_percent,
+    avg_rmse_exp = avg_rmse_exp,
+    avg_rmse_exp_p = avg_rmse_exp_p,
+    avg_test_mean = avg_test_mean,
+    avg_rsquared = avg_rsquared,
+    avg_adj_rsquared = avg_adj_rsquared,
+    avg_mae = avg_mae,
+    avg_ef = avg_ef,  # Include avg_ef in the results dataframe
+    avg_bias = avg_bias  # Include avg_bias in the results dataframe
+  )
+
+  # Print the average performance
+  print(c("Average RMSE" = avg_rmse, "Average Percent RMSE" = avg_rmse_percent, "Average RMSE Exp" = avg_rmse_exp,
+          "Average RMSE Exp %" = avg_rmse_exp_p,
+          "Average Rsquared" = avg_rsquared,
+          "Average Test Set Mean" = avg_test_mean,
+          "Average Adjusted Rsquared" = avg_adj_rsquared,
+          "Average MAE" = avg_mae, "Average EF" = avg_ef,
+          "Average Bias" = avg_bias))
+
+  # Return the average performance
+  return(results_df)
+}
+
+
+results <- cross_validate_lm("log_sum_bai_5 ~ log_vol_concave", model_df, n_folds = 10)
 
 # Apply the cross validation function to each model
 results_list <- lapply(models, function(model) {
@@ -620,7 +758,335 @@ print(results_table)
 
 
 
+# Cross validate using leave on plot out instead of k-folds across trees
 
+cross_validate_lme_plot <- function(formula, data, n_folds = 8, target_variable = 'log_sum_bai_5'){
+
+  formula <- as.formula(formula)
+
+  # Set seed for reproducibility
+  set.seed(123)
+
+  # Create vectors to hold the results of each fold
+  rmse_results <- c()
+  rmse_percent_results <- c()
+  rmse_exp_results <- c()
+  rmse_exp_percent_results <- c()
+  rsquared_cond_results <- c()
+  rsquared_marg_results <- c()
+  ef_results <- c()  # Vector to hold EF results
+  bias_results <- c()  # Vector to hold Bias results
+
+  # Perform n_folds-fold cross-validation manually
+  plots <- unique(data$PlotID)
+
+  for(i in plots){
+    # Split the data into a training set and a test set
+    trainSet <- dplyr::filter(data, PlotID != i)
+    testSet  <- dplyr::filter(data, PlotID == i)
+
+    # Get mean value of test Set
+    mean_test <- mean(testSet[, target_variable])
+
+    # Train the mixed-effects model
+    model <- lmerTest::lmer(formula, data = trainSet, REML = FALSE)
+
+    # Test the model on the test set
+    predictions <- predict(model, newdata = testSet, re.form=NA)
+
+    # Back transform predictions
+    predictions_exp <- exp(predictions)
+    actual_exp <- exp(testSet[, target_variable])
+
+    # Calculate back transformed RMSE as percentage of Test Set Mean
+    rmse_exp <- sqrt(mean((predictions_exp - actual_exp)^2))
+    rmse_exp_p <- rmse_exp / mean(actual_exp) * 100
+
+    # Evaluate its performance
+    perf <- performance::model_performance(model, test_data = testSet)
+
+    # Model Efficiency
+    observed = testSet[, target_variable]
+    mean_observed = mean(observed)
+    numerator = sum((observed - predictions)^2)
+    denominator = sum((observed - mean_observed)^2)
+    EF = 1 - (numerator / denominator)
+
+    # Model Bias
+    bias = sum(observed - predictions) / length(observed)
+
+    # Calculate RMSE as percentage of Test Set Mean
+    rmse_percent <- perf$RMSE / mean_test * 100
+
+    # Store the results
+    rmse_results <- c(rmse_results, perf$RMSE)
+    rmse_percent_results <- c(rmse_percent_results, rmse_percent)
+    rmse_exp_results <- c(rmse_exp_results, rmse_exp)
+    rmse_exp_percent_results <- c(rmse_exp_percent_results, rmse_exp_p)
+    rsquared_cond_results <- c(rsquared_cond_results, perf$R2_conditional)
+    rsquared_marg_results <- c(rsquared_marg_results, perf$R2_marginal)
+    ef_results <- c(ef_results, EF)  # Store EF result
+    bias_results <- c(bias_results, bias)  # Store Bias result
+
+  }
+
+  # Average the results
+  avg_rmse <- mean(rmse_results)
+  avg_rmse_percent <- mean(rmse_percent_results)
+  avg_rmse_exp <- mean(rmse_exp_results)
+  avg_rmse_exp_percent <- mean(rmse_exp_percent_results)
+  avg_marg_rsquared <- mean(rsquared_marg_results)
+  avg_cond_rsquared <- mean(rsquared_cond_results)
+  avg_mae <- mean(mae_results)
+  avg_ef <- mean(ef_results)  # Average EF
+  avg_bias <- mean(bias_results)  # Average Bias
+
+  results_df <- data.frame(
+    formula = deparse(formula),
+    avg_rmse = avg_rmse,
+    avg_rmse_percent = avg_rmse_percent,
+    avg_rmse_exp = avg_rmse_exp,
+    avg_rmse_exp_percent = avg_rmse_exp_percent,
+    avg_marg_rsquared = avg_marg_rsquared,
+    avg_cond_rsquared = avg_cond_rsquared,
+    avg_mae = avg_mae,
+    avg_ef = avg_ef,  # Include avg_ef in the results dataframe
+    avg_bias = avg_bias  # Include avg_bias in the results dataframe
+  )
+
+  # Print the average performance
+  print(c("Average RMSE" = avg_rmse, "Average Percent RMSE" = avg_rmse_percent, "Average RMSE Exp" = avg_rmse_exp,
+          "Average Percent RMSE Exp" = avg_rmse_exp_percent,
+          "Average Marginal Rsquared" = avg_marg_rsquared, "Average Conditional Rsquared" = avg_cond_rsquared,
+          "Average MAE" = avg_mae, "Average EF" = avg_ef, "Average Bias" = avg_bias))  # Print avg_ef and avg_bias
+
+  # Return the average performance
+  return(results_df)
+}
+
+results <- cross_validate_lme_plot(formula = "log_sum_bai_5 ~ log_vol_concave + (1|PlotID)",
+                                   model_df, target_variable = 'log_sum_bai_5')
+
+model_df <- model_df %>% mutate(stand = str_extract(PlotID, "CT\\d+"))
+
+
+cross_validate_lme_stand <- function(formula, data, target_variable = 'log_sum_bai_5'){
+
+  formula <- as.formula(formula)
+
+  # Set seed for reproducibility
+  set.seed(123)
+
+  # Create vectors to hold the results of each fold
+  rmse_results <- c()
+  rmse_percent_results <- c()
+  rmse_exp_results <- c()
+  rmse_exp_percent_results <- c()
+  rsquared_cond_results <- c()
+  rsquared_marg_results <- c()
+  ef_results <- c()  # Vector to hold EF results
+  bias_results <- c()  # Vector to hold Bias results
+
+  # Perform n_folds-fold cross-validation manually
+  stands <- unique(data$stand)
+
+  for(i in stands){
+    # Split the data into a training set and a test set
+    trainSet <- dplyr::filter(data, stand != i)
+    testSet  <- dplyr::filter(data, stand == i)
+
+    # Get mean value of test Set
+    mean_test <- mean(testSet[, target_variable])
+
+    # Train the mixed-effects model
+    model <- lmerTest::lmer(formula, data = trainSet, REML = FALSE)
+
+    # Test the model on the test set
+    predictions <- predict(model, newdata = testSet, re.form=NA)
+
+    # Back transform predictions
+    predictions_exp <- exp(predictions)
+    actual_exp <- exp(testSet[, target_variable])
+
+    # Calculate back transformed RMSE as percentage of Test Set Mean
+    rmse_exp <- sqrt(mean((predictions_exp - actual_exp)^2))
+    rmse_exp_p <- rmse_exp / mean(actual_exp) * 100
+
+    # Evaluate its performance
+    perf <- performance::model_performance(model, test_data = testSet)
+
+    # Model Efficiency
+    observed = testSet[, target_variable]
+    mean_observed = mean(observed)
+    numerator = sum((observed - predictions)^2)
+    denominator = sum((observed - mean_observed)^2)
+    EF = 1 - (numerator / denominator)
+
+    # Model Bias
+    bias = sum(observed - predictions) / length(observed)
+
+    # Calculate RMSE as percentage of Test Set Mean
+    rmse_percent <- perf$RMSE / mean_test * 100
+
+    # Store the results
+    rmse_results <- c(rmse_results, perf$RMSE)
+    rmse_percent_results <- c(rmse_percent_results, rmse_percent)
+    rmse_exp_results <- c(rmse_exp_results, rmse_exp)
+    rmse_exp_percent_results <- c(rmse_exp_percent_results, rmse_exp_p)
+    rsquared_cond_results <- c(rsquared_cond_results, perf$R2_conditional)
+    rsquared_marg_results <- c(rsquared_marg_results, perf$R2_marginal)
+    ef_results <- c(ef_results, EF)  # Store EF result
+    bias_results <- c(bias_results, bias)  # Store Bias result
+
+  }
+
+  # Average the results
+  avg_rmse <- mean(rmse_results)
+  avg_rmse_percent <- mean(rmse_percent_results)
+  avg_rmse_exp <- mean(rmse_exp_results)
+  avg_rmse_exp_percent <- mean(rmse_exp_percent_results)
+  avg_marg_rsquared <- mean(rsquared_marg_results)
+  avg_cond_rsquared <- mean(rsquared_cond_results)
+  avg_mae <- mean(mae_results)
+  avg_ef <- mean(ef_results)  # Average EF
+  avg_bias <- mean(bias_results)  # Average Bias
+
+  results_df <- data.frame(
+    formula = deparse(formula),
+    avg_rmse = avg_rmse,
+    avg_rmse_percent = avg_rmse_percent,
+    avg_rmse_exp = avg_rmse_exp,
+    avg_rmse_exp_percent = avg_rmse_exp_percent,
+    avg_marg_rsquared = avg_marg_rsquared,
+    avg_cond_rsquared = avg_cond_rsquared,
+    avg_mae = avg_mae,
+    avg_ef = avg_ef,  # Include avg_ef in the results dataframe
+    avg_bias = avg_bias  # Include avg_bias in the results dataframe
+  )
+
+  # Print the average performance
+  print(c("Average RMSE" = avg_rmse, "Average Percent RMSE" = avg_rmse_percent, "Average RMSE Exp" = avg_rmse_exp,
+          "Average Percent RMSE Exp" = avg_rmse_exp_percent,
+          "Average Marginal Rsquared" = avg_marg_rsquared, "Average Conditional Rsquared" = avg_cond_rsquared,
+          "Average MAE" = avg_mae, "Average EF" = avg_ef, "Average Bias" = avg_bias))  # Print avg_ef and avg_bias
+
+  # Return the average performance
+  return(results_df)
+}
+
+results <- cross_validate_lme_stand(formula = "log_sum_bai_5 ~ log_vol_concave + (1|PlotID)",
+                                   model_df, target_variable = 'log_sum_bai_5')
+
+cross_validate_lm_stand <- function(formula, data, target_variable = 'log_sum_bai_5'){
+
+  formula <- as.formula(formula)
+
+  # Set seed for reproducibility
+  set.seed(123)
+
+  # Create vectors to hold the results of each fold
+  rmse_results <- c()
+  rmse_percent_results <- c()
+  rmse_exp_results <- c()
+  rmse_exp_p_results <- c()
+  test_mean <- c()
+  rsquared_results <- c()
+  adj_rsquared_results <- c()
+  mae_results <- c()
+  ef_results <- c()  # Vector to hold EF results
+  bias_results <- c()  # Vector to hold Bias results
+
+  # Perform n_folds-fold cross-validation manually
+  stands <- unique(data$stand)
+
+  for(i in stands){
+    # Split the data into a training set and a test set
+    trainSet <- dplyr::filter(data, stand != i)
+    testSet  <- dplyr::filter(data, stand == i)
+
+    # Train the mixed-effects model
+    model <- lm(formula, data = trainSet)
+
+    # Test the model on the test set
+    predictions <- predict(model, newdata = testSet)
+
+    # Evaluate its performance
+    perf <- performance::model_performance(model, test_data = testSet)
+
+    # Back transform predictions
+    predictions_exp <- exp(predictions)
+    actual_exp <- exp(testSet[, target_variable])
+
+    # Calculate back transformed RMSE as percentage of Test Set Mean
+    rmse_exp <- sqrt(mean((predictions_exp - actual_exp)^2))
+    rmse_exp_p <- rmse_exp / mean(actual_exp) * 100
+
+    # Model Efficiency
+    observed = testSet[, target_variable]
+    mean_observed = mean(observed)
+    numerator = sum((observed - predictions)^2)
+    denominator = sum((observed - mean_observed)^2)
+    EF = 1 - (numerator / denominator)
+
+    # Model Bias
+    bias = sum(observed - predictions) / length(observed)
+
+    # Store the results
+    rmse_results <- c(rmse_results, perf$RMSE)
+    rmse_percent_results <- c(rmse_percent_results, rmse_exp_p)
+    rmse_exp_results <- c(rmse_exp_results, rmse_exp)
+    rmse_exp_p_results <- c(rmse_exp_p_results, rmse_exp_p)
+    test_mean <- c(test_mean, mean(actual_exp))
+    rsquared_results <- c(rsquared_results, perf$R2)
+    adj_rsquared_results <- c(adj_rsquared_results, perf$R2_adjusted)
+    mae_results <- c(mae_results, perf$MAE)
+    ef_results <- c(ef_results, EF)  # Store EF result
+    bias_results <- c(bias_results, bias)  # Store Bias result
+
+
+  }
+
+  # Average the results
+  avg_rmse <- mean(rmse_results)
+  avg_rmse_percent <- mean(rmse_percent_results)
+  avg_rmse_exp <- mean(rmse_exp_results)
+  avg_rmse_exp_p <- mean(rmse_exp_p_results)
+  avg_test_mean <- mean(test_mean)
+  avg_rsquared <- mean(rsquared_results)
+  avg_adj_rsquared <- mean(adj_rsquared_results)
+  avg_mae <- mean(mae_results)
+  avg_ef <- mean(ef_results)  # Average EF
+  avg_bias <- mean(bias_results)  # Average Bias
+
+  results_df <- data.frame(
+    formula = deparse(formula),
+    avg_rmse = avg_rmse,
+    avg_rmse_percent = avg_rmse_percent,
+    avg_rmse_exp = avg_rmse_exp,
+    avg_rmse_exp_p = avg_rmse_exp_p,
+    avg_test_mean = avg_test_mean,
+    avg_rsquared = avg_rsquared,
+    avg_adj_rsquared = avg_adj_rsquared,
+    avg_mae = avg_mae,
+    avg_ef = avg_ef,  # Include avg_ef in the results dataframe
+    avg_bias = avg_bias  # Include avg_bias in the results dataframe
+  )
+
+  # Print the average performance
+  print(c("Average RMSE" = avg_rmse, "Average Percent RMSE" = avg_rmse_percent, "Average RMSE Exp" = avg_rmse_exp,
+          "Average RMSE Exp %" = avg_rmse_exp_p,
+          "Average Rsquared" = avg_rsquared,
+          "Average Test Set Mean" = avg_test_mean,
+          "Average Adjusted Rsquared" = avg_adj_rsquared,
+          "Average MAE" = avg_mae, "Average EF" = avg_ef,
+          "Average Bias" = avg_bias))
+
+  # Return the average performance
+  return(results_df)
+}
+
+results <- cross_validate_lm_stand(formula = "log_sum_bai_5 ~ log_vol_concave",
+                                   model_df, target_variable = 'log_sum_bai_5')
 
 # Correlation Plots
 

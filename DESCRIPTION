@@ -24,7 +24,6 @@ Imports:
     nngeo,
     progress,
     purrr,
-    raster,
     rayshader,
     rgl,
     SearchTrees,
@@ -38,6 +37,7 @@ Imports:
     terra,
     tictoc,
     tidyselect,
+    viridis,
     whitebox
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

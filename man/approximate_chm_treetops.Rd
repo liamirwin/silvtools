@@ -15,7 +15,9 @@ approximate_chm_treetops(
   hmin = 2,
   mod = 0.07,
   chm_ext = "smooth_p2r",
-  save_output = TRUE
+  save_output = TRUE,
+  vector_ext = ".gpkg",
+  is_vrt = FALSE
 )
 }
 \arguments{
@@ -40,6 +42,10 @@ approximate_chm_treetops(
 \item{chm_ext}{A string related to the desired chm file selection pattern (default smooth) if multiple options; user chooses}
 
 \item{save_output}{A logical indicating whether to save the output to disk. Default is FALSE.}
+
+\item{vector_ext}{A string specifying the vector file extension. Default is '.gpkg', options '.shp', '.gpkg', '.geojson'.}
+
+\item{is_vrt}{A logical indicating whether the CHM is a virtual raster. Default is FALSE.}
 }
 \value{
 A list containing the results of each tree detection method.

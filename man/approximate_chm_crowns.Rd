@@ -21,6 +21,22 @@ approximate_chm_crowns(
 \item{proj_dir}{A string specifying the project directory.}
 
 \item{chm_dir}{A string specifying the raster output directory. Default is NULL.}
+
+\item{vector_output}{A string specifying the vector output directory. Default is NULL.}
+
+\item{raster_output}{A string specifying the raster output directory. Default is NULL.}
+
+\item{crown_methods}{A character vector specifying the crown segmentation methods to use. Default is c('fixed', 'auto', 'variable').}
+
+\item{hmin}{A numeric specifying the minimum height of a tree. Default is 1.}
+
+\item{crown_height_threshold}{A numeric specifying the threshold for crown height. Default is 0.25.}
+
+\item{vis}{A logical specifying whether to visualize the segmentation results. Default is FALSE.}
+
+\item{chm_ext}{A string specifying the extension of the CHM file. Default is 'smooth'.}
+
+\item{window_size}{A numeric specifying the window size for the segmentation method. Default is NULL.}
 }
 \value{
 A list containing the results of each segmentation method.

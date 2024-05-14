@@ -7,7 +7,7 @@
 #' @param output_laz Logical, should the output be in LAZ format?
 #' @param num_cores Number of cores for parallel processing.
 #' @param acq Acquisition name.
-#' @param out_dir Directory where las tiles are written; default is '{proj_dir}/input/las/tile'
+#' @param tile_dir Directory where las tiles are written; default is '{proj_dir}/input/las/tile'
 #'
 #' @return A catalog of tiled LAS files.
 #' @export

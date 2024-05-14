@@ -9,10 +9,7 @@
 #' @param pattern A string specifying the pattern to match file names against.
 #' @param ext A string specifying the file extension to filter on. Default is '.tif$'.
 #' @return A string containing the full path of the selected file.
-#' @examples
-#' \dontrun{
-#' select_file_path("path/to/directory", "pattern")
-#' }
+#'
 #' @export
 select_file_path  <- function(file_dir, pattern, ext = '.tif$') {
 
@@ -24,7 +21,12 @@ select_file_path  <- function(file_dir, pattern, ext = '.tif$') {
 
   files <- list.files(file_dir, pattern = pattern, full.names = TRUE)
 
-  # Filter files that meet the raster subset criterion
+  # If no files are found, return an error
+  if (length(files) == 0) {
+    stop(glue::glue("No files matched the expected input in directory {file_dir} with pattern {pattern}. Please check the directory and try again."))
+  }
+
+  # Filter files that meet the subset criterion
   files <- stringr::str_subset(files, pattern = ext)
 
   if (length(files) > 1) {

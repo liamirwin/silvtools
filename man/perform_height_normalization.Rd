@@ -12,7 +12,10 @@ perform_height_normalization(
   norm_algorithm = "tin",
   num_cores = 1L,
   index_tiles = TRUE,
-  output_laz = TRUE
+  output_laz = TRUE,
+  k = 8,
+  norm_dir = NULL,
+  dtm_file = NULL
 )
 }
 \arguments{
@@ -24,13 +27,19 @@ perform_height_normalization(
 
 \item{acq}{Acquisition name. Default is NULL.}
 
-\item{norm_algorithm}{Normalization algorithm to use. Default is tin().}
+\item{norm_algorithm}{Normalization algorithm to use. Default is tin(). Options are 'tin', 'knnidw', or 'dtm'.}
 
 \item{num_cores}{Number of cores for parallel processing. Default is 1.}
 
 \item{index_tiles}{Logical, should tiles be indexed? Default is TRUE.}
 
 \item{output_laz}{Logical, should the output be in LAZ format? Default is TRUE.}
+
+\item{k}{Number of neighbours for knnidw algorithm}
+
+\item{norm_dir}{Directory to write normalized tiles to; default is '{proj_dir}/input/las/norm'}
+
+\item{dtm_file}{Path to a raster file or a SpatRaster object to use for dtm normalization}
 }
 \value{
 A catalog of height-normalized LAS files.

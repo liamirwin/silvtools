@@ -8,6 +8,7 @@
 #' @param chunk A LAS file chunk to be processed.
 #' @param crowns A set of crowns represented as an sf object.
 #' @param filter Logical indicating whether to filter out points that do not correspond to a tree
+#' @param buf Buffer distance to use when selecting crowns that intersect with the chunk
 #'
 #' @return A LAS file with an additional attribute called "treeID" that contains
 #' the ID of the tree to which each point belongs.
@@ -17,6 +18,15 @@
 #' @importFrom glue glue
 #' @importFrom tictoc tic toc
 #' @export
+#'
+#' @examples
+#'
+#' lasfile <- system.file("extdata", "MixedConifer.laz", package="lidR")
+#' las <- readLAS(lasfile)
+#' norm_las <- normalize_height(las)
+#'
+#'
+#'
 #'
 apply_treeid <- function(chunk, crowns, filter = TRUE, buf = 5){
 

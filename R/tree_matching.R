@@ -4,6 +4,8 @@
 #' @param reference sf object - points of recorded tree locations gathered in field
 #' @param detected sf object - tree top locations typically from lidR::locate_trees
 #' @param PlotID character string; ID of plot where accuracy is being assessed
+#' @param fixed_max_dist numeric; maximum distance to search for a match otherwise; percentage of tree height (10%)
+#' @param no_z logical; if TRUE, detected tree tops will be matched based on xy coordinates only
 #'
 #' @return returns a tree matching data table
 #' @export
@@ -17,7 +19,7 @@
 #'
 #' matched_trees <- tree_matching(reference, detected)
 #' }
-tree_matching = function(reference, detected, PlotID)
+tree_matching = function(reference, detected, PlotID, fixed_max_dist = NULL, no_z = FALSE)
 {
   stopifnot(is(detected, "sf"))
   stopifnot(is(reference, "sf"))
@@ -40,8 +42,8 @@ tree_matching = function(reference, detected, PlotID)
   detected <- detected %>%
     dplyr::mutate(X = unlist(purrr::map(.$geometry,1)), Y = unlist(purrr::map(.$geometry,2))) %>% sf::st_drop_geometry()
 
-  xy_truth    = reference %>% dplyr::select(X, Y)
-  xy_detected = detected %>% dplyr::select(X, Y)
+  xy_truth    = reference %>% dplyr::select(X, Y) %>% as.data.frame()
+  xy_detected = detected %>% dplyr::select(X, Y) %>% as.data.frame()
   x_truth     = xy_truth[,1]
   y_truth     = xy_truth[,2]
   x_detected  = xy_detected[,1]
@@ -72,8 +74,13 @@ tree_matching = function(reference, detected, PlotID)
   match_table$distance2 <- sqrt((x_truth[inds2] - x_detected)^2 + (y_truth[inds2] - y_detected)^2)
 
   # Takes 10% of tree height as maximum distance, if this is less than 2m make 2m
-  dist_max = z_detected*0.10
-  dist_max[dist_max < 2] = 2
+  if (is.null(fixed_max_dist)) {
+    dist_max = z_detected * 0.10
+    dist_max[dist_max < 2] = 2
+  } else {
+    dist_max = fixed_max_dist
+  }
+
   # assign the column index_truth a value of NA if distance more than dist max
   match_table <- match_table %>% mutate(index_truth1 = ifelse(distance1 > dist_max, NA, index_truth1),
                                         index_truth2 = ifelse(distance2 > dist_max, NA, index_truth2))
@@ -110,10 +117,13 @@ tree_matching = function(reference, detected, PlotID)
 
   data.table::setDT(X)
 
+
+  if(!no_z){
   if ("Z" %in% names(dt_reference)){
     data.table::setnames(X, c("X.x", "Y.x", "Z.x", "X.y", "Y.y", "Z.y"), c("X", "Y", "Z", "X.detected", "Y.detected", "Z.detected"))
   }else {
     data.table::setnames(X, c("X.x", "Y.x", "X.y", "Y.y", "Z"), c("X", "Y", "X.detected", "Y.detected", "Z.detected"))
+  }
   }
 
   X$status = "FN"
