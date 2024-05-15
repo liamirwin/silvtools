@@ -1,6 +1,6 @@
 #' Calculate Heygi Style Competition Indicies
 #'
-#' @param ttops tree tops object; expects an X.detected, Y.detected column, typically from silvtools::tree_matching() function
+#' @param ttops tree tops object
 #' @param comp_input string value indicating competition index input; traditionally DBH/Height, we test crown structural metrics
 #' @param maxR radius of sphere of influence; treetops within this radius will be included in the calculation of cindex
 #' @param quiet logical; if TRUE, suppresses progress messages
@@ -10,18 +10,38 @@
 #'
 #' @examples
 #' \dontrun{
-#' c <- heygi_cindex(ttops, comp_input = 'vol_convex', maxR = 6)
+#'
+#' lasfile <- system.file("extdata", "MixedConifer.laz", package = "lidR")
+#' las <- readLAS(lasfile)
+#' norm_las <- normalize_height(las, tin())
+#' chm <- rasterize_canopy(norm_las, p2r(subcircle = 0.25), res = 1)
+#' ttops <- locate_trees(chm, algorithm = lmf(ws = 2, hmin = 5))
+#'
+#' c <- heygi_cindex(ttops, comp_input = 'Z', maxR = 6)
 #' }
 heygi_cindex <- function(ttops, comp_input = 'vol_convex', maxR = 6, quiet = FALSE){
   # Start timer if not quiet
   if(!quiet){
   tictoc::tic()
   }
+
+  # If X column does not exist; extract from geometry
+  if(!('X' %in% names(ttops))){
+    ttops <- ttops %>%
+      dplyr::mutate(X = unlist(purrr::map(.$geometry,1)),
+                    Y = unlist(purrr::map(.$geometry,2)))
+  }
+
+  # Print warning if there are more than 30000 rows
+  if(nrow(ttops) > 30000){
+    warning('This function may take a long time to run with more than 30,000 tree tops - use heygi_cindex_chunks instead')
+  }
+
   # Convert ttops to ppp object
   trees_ppp <- ttops %>%
     dplyr::mutate(X = X, Y = Y) %>%
     as.data.frame() %>%
-    dplyr::select(c(X, Y, comp_input))
+    dplyr::select(X, Y, comp_input)
 
   names(trees_ppp) <- c('X','Y','comp_value')
 
