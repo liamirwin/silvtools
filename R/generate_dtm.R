@@ -36,6 +36,11 @@ generate_dtm <- function(proj_dir, res = 1, dtm_algorithm = 'tin',
   # Set options for the catalog
   lidR::opt_progress(ctg_class) <- TRUE
 
+  # Filter out non-ground points
+  lidR::opt_filter(ctg_class) <- 'keep_class 2'
+
+  print('filtered out non-ground points')
+
   # Auto-set the chunk buffer size (5% of tile_size) if not provided
   if (is.null(chunk_buf)) {
     tile_size <- get_tile_size(ctg_class)

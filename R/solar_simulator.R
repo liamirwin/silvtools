@@ -25,7 +25,7 @@
 #' # Generate DSM and save to file
 #' dsm <- rasterize_canopy(las, res = 5)
 #' dsm_file <- file.path(proj_dir, paste0(site_name,'_dsm.tif'))
-#' writeRaster(dsm, dsm_file)
+#' writeRaster(dsm, dsm_file, overwrite = T)
 #'
 #' # Set up solar position data
 #' ext_sf <- ext(dsm) %>% vect(crs = crs(dsm)) %>% st_as_sf() %>% st_transform(4326)
@@ -39,7 +39,7 @@
 #' # Grab sun position data
 #' sun_pos <- get_solar_pos(start_date, end_date, interval, lat, lon)
 #' # Perform solar simulation across timepoints
-#' solar_simulator(dsm_file, proj_dir, site_name, aoi_file, sun_pos)
+#' solar_simulator(dsm_file, proj_dir, site_name,sun_pos = sun_pos)
 #' }
 solar_simulator <- function(dsm_file,
                             proj_dir,

@@ -13,6 +13,7 @@
 #' @param clamp Logical switch to clamp CHM values. Default is FALSE.
 #' @param min_clamp Minimum value to clamp CHM at. Default is 0.
 #' @param max_clamp Maximum value to clamp CHM at. Default is 50.
+#' @param dsm Generate DSM from non-normalized LAS files. Default is FALSE.
 #'
 #' @return Saves a CHM locally as well as smoothed and filled versions of the CHM.
 #'
@@ -27,7 +28,7 @@ generate_chm <- function(proj_dir, res = 1, algorithm = c('p2r','pitfree'),
                          subcircle_p2r = 0, subcircle_pitfree = 0,
                          num_cores = 1L, chunk_buf = NULL,
                          acq = NULL, clamp = FALSE,
-                         min_clamp = 0, max_clamp = 50) {
+                         min_clamp = 0, max_clamp = 50, dsm = FALSE) {
   # Handle parallelization
   if (num_cores == 1L) {
     future::plan("sequential")
@@ -40,9 +41,22 @@ generate_chm <- function(proj_dir, res = 1, algorithm = c('p2r','pitfree'),
     acq <- basename(proj_dir)
   }
 
+  if(!dsm){
   # Set options for the catalog
   ctg_norm <- lidR::catalog(glue::glue("{proj_dir}/input/las/norm"))
   lidR::opt_progress(ctg_norm) <- TRUE
+  lidR::opt_chunk_size(ctg_norm) <- 0
+  # Create the CHM output directory if it doesn't exist
+  chm_output_dir <- glue::glue("{proj_dir}/output/raster/chm")
+  } else{
+  ctg_norm <- lidR::catalog(glue::glue("{proj_dir}/input/las/class"))
+  lidR::opt_progress(ctg_norm) <- TRUE
+  lidR::opt_chunk_size(ctg_norm) <- 0
+  # Create the DSM output directory if it doesn't exist
+  chm_output_dir <- glue::glue("{proj_dir}/output/raster/dsm")
+  print(glue::glue("Generating DSM for {acq}"))
+  }
+
 
   # Auto-set the chunk buffer size (5% of tile_size) if not provided
   if (is.null(chunk_buf)) {
@@ -51,8 +65,7 @@ generate_chm <- function(proj_dir, res = 1, algorithm = c('p2r','pitfree'),
   }
   lidR::opt_chunk_buffer(ctg_norm) <- chunk_buf
 
-  # Create the CHM output directory if it doesn't exist
-  chm_output_dir <- glue::glue("{proj_dir}/output/raster/chm")
+
   if (!dir.exists(chm_output_dir)) {
     dir.create(chm_output_dir, showWarnings = FALSE, recursive = TRUE)
     print(glue::glue("Created a directory for CHM outputs {chm_output_dir}"))

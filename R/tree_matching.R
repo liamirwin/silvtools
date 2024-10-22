@@ -34,9 +34,14 @@ tree_matching = function(reference, detected, PlotID, fixed_max_dist = NULL, no_
     print('Renamed geom column to geometry')
   }
 
-  reference <- reference %>%
-    dplyr::rename(X_postex = X, Y_postex = Y) %>%
-    dplyr::mutate(X = unlist(purrr::map(.$geometry,1)), Y = unlist(purrr::map(.$geometry,2)),
+
+  # Rename X and Y column if present
+  if('X' %in% names(reference)){
+    reference <- reference %>% rename(X_postex = X, Y_postex = Y)
+    print('Renamed X and Y columns to X_postex and Y_postex')
+  }
+
+  reference <- reference %>% dplyr::mutate(X = unlist(purrr::map(.$geometry,1)), Y = unlist(purrr::map(.$geometry,2)),
            PLOTID = PlotID) %>% sf::st_drop_geometry()
 
   detected <- detected %>%
@@ -56,6 +61,7 @@ tree_matching = function(reference, detected, PlotID, fixed_max_dist = NULL, no_
 
   # Attribution of nearest and 2nd neareast referenced tree index for each detected tree
   tree <- SearchTrees::createTree(xy_truth)
+
   # Finds 2 nearest neighbours using xy values of truth/detected trees
   knn  <- SearchTrees::knnLookup(tree, newdat = xy_detected, k = 2L)
   # 1st nearest neighbour ID
@@ -88,7 +94,7 @@ tree_matching = function(reference, detected, PlotID, fixed_max_dist = NULL, no_
   id = match_table[, .I[which.min(distance1)], by = index_truth1]
   # Set match table truth index to NA
   match_table$index_truth1 = NA_integer_
-  # Set index truth to tree value
+  # Set index truth to tree value (detected tree ID)
   match_table[id$V1, index_truth1 := id$index_truth1]
   # Get IDs of second closest trees
   id = match_table[, .I[which.min(distance2)], by = index_truth2]
@@ -98,8 +104,6 @@ tree_matching = function(reference, detected, PlotID, fixed_max_dist = NULL, no_
   match_table[index_truth2 %in% index_truth1, index_truth2 := NA_integer_]
   # Collate the two index truth ID columns into one
   match_table$index_truth = ifelse(is.na(match_table$index_truth1), match_table$index_truth2, match_table$index_truth1)
-
-  ###
 
   # Create a rowID column for the ground truth trees
   reference$num_tree = 1:nrow(reference)
@@ -111,6 +115,7 @@ tree_matching = function(reference, detected, PlotID, fixed_max_dist = NULL, no_
   dt_reference = data.table::as.data.table(reference)
   dt_detected     = data.table::as.data.table(detected)
 
+  # Join the two tables
   X = dplyr::full_join(dt_reference, dt_detected, by = "num_tree")
   X$PLOTID <- ifelse(is.na(X$PLOTID.x), X$PLOTID.y, X$PLOTID.x)
   X = dplyr::select(X, -PLOTID.x, -PLOTID.y)
@@ -126,9 +131,12 @@ tree_matching = function(reference, detected, PlotID, fixed_max_dist = NULL, no_
   }
   }
 
+  # Set default status to False Negative (FN)
   X$status = "FN"
+  # Set status to False Positive (FP) if no match has been made
   X$status[is.na(X$num_tree)] = "FP"
-  X$status[!is.na(X$Z.detected) & !is.na(X$num_tree)] = "TP"
+  # Set status to True Positive (TP) if a match has been made
+  X$status[!is.na(X$num_tree)] = "TP"
   class(X) <- append("TreeMatching", class(X))
   return(X)
 }

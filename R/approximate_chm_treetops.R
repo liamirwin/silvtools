@@ -19,7 +19,7 @@
 #' @return A list containing the results of each tree detection method.
 #'
 #' @export
-approximate_chm_treetops <- function(proj_dir,
+approximate_chm_treetops_alt <- function(proj_dir,
                               chm_dir = NULL,
                               vector_output = NULL,
                               fixed_window = TRUE,
@@ -65,6 +65,8 @@ approximate_chm_treetops <- function(proj_dir,
     chm <- vrt(vrt_file)
   } else{
   chm <- terra::rast(select_file_path(chm_dir, pattern = chm_ext, ext = '.tif$'))
+  print('loading chm to disk')
+  chm <- chm * 1
   }
 
   results <- list()
