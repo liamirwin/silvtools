@@ -6,6 +6,8 @@
 #'
 #' @param chunk A LAS object or a file path to a LAS file containing tree point cloud data. The data must include tree IDs and (optionally) RGB color channels.
 #' @param RGB Logical; if \code{TRUE}, the function computes chromatic coordinates (RCC, GCC, BCC) using the provided color channels (R, G, B). Default is \code{FALSE}.
+#' @param np The `numpy` Python package, which must be installed in the Python environment. Default is \code{numpy}.
+#' @param scipy_spatial The `scipy.spatial` Python package, which must be installed in the Python environment. Default is \code{scipy.spatial}.
 #'
 #' @details
 #' The function performs the following steps:

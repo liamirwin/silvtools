@@ -28,7 +28,8 @@ generate_chm <- function(proj_dir, res = 1, algorithm = c('p2r','pitfree'),
                          subcircle_p2r = 0, subcircle_pitfree = 0,
                          num_cores = 1L, chunk_buf = NULL,
                          acq = NULL, clamp = FALSE,
-                         min_clamp = 0, max_clamp = 50, dsm = FALSE) {
+                         min_clamp = 0, max_clamp = 50, dsm = FALSE,
+                         filter = NULL) {
   # Handle parallelization
   if (num_cores == 1L) {
     future::plan("sequential")
@@ -57,6 +58,10 @@ generate_chm <- function(proj_dir, res = 1, algorithm = c('p2r','pitfree'),
   print(glue::glue("Generating DSM for {acq}"))
   }
 
+  if(!is.null(filter)){
+    opt_filter(ctg_norm) <- filter
+    print(glue::glue("Applying filter {filter} to the catalog"))
+  }
 
   # Auto-set the chunk buffer size (5% of tile_size) if not provided
   if (is.null(chunk_buf)) {
@@ -115,10 +120,19 @@ generate_chm <- function(proj_dir, res = 1, algorithm = c('p2r','pitfree'),
     }
     chm_smooth <- terra::focal(chm_filled, w = fgauss(1, n = 5))
     names(chm_smooth) <- 'Z'
-    # Write CHM files
-    terra::writeRaster(chm, filename = glue::glue("{chm_output_dir}/{acq}_chm_{res}m_p2r_sc{subcircle_p2r}.tif"), overwrite = TRUE)
-    terra::writeRaster(chm_filled, filename = glue::glue("{chm_output_dir}/{acq}_chm_fill_p2r_sc{subcircle_p2r}_{res}m.tif"), overwrite = TRUE)
-    terra::writeRaster(chm_smooth, filename = glue::glue("{chm_output_dir}/{acq}_chm_smooth_p2r_sc{subcircle_p2r}_{res}m.tif"), overwrite = TRUE)
+
+
+    if(is.null(filter)){
+      # Write CHM files
+      terra::writeRaster(chm, filename = glue::glue("{chm_output_dir}/{acq}_chm_{res}m_p2r_sc{subcircle_p2r}.tif"), overwrite = TRUE)
+      terra::writeRaster(chm_filled, filename = glue::glue("{chm_output_dir}/{acq}_chm_fill_p2r_sc{subcircle_p2r}_{res}m.tif"), overwrite = TRUE)
+      terra::writeRaster(chm_smooth, filename = glue::glue("{chm_output_dir}/{acq}_chm_smooth_p2r_sc{subcircle_p2r}_{res}m.tif"), overwrite = TRUE)
+    } else{
+      # Write CHM files
+      terra::writeRaster(chm, filename = glue::glue("{chm_output_dir}/{acq}_chm_{res}m_p2r_sc{subcircle_p2r}_{str_remove_all(filter, ' ')}.tif"), overwrite = TRUE)
+      terra::writeRaster(chm_filled, filename = glue::glue("{chm_output_dir}/{acq}_chm_fill_p2r_sc{subcircle_p2r}_{res}m_{str_remove_all(filter, ' ')}.tif"), overwrite = TRUE)
+      terra::writeRaster(chm_smooth, filename = glue::glue("{chm_output_dir}/{acq}_chm_smooth_p2r_sc{subcircle_p2r}_{res}m_{str_remove_all(filter, ' ')}.tif"), overwrite = TRUE)
+    }
     # Delete intermediate raster tiles
     if (dir.exists(glue::glue("{chm_output_dir}/tiles"))) {
       unlink(glue::glue("{chm_output_dir}/tiles"), recursive = TRUE)

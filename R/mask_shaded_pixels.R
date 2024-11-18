@@ -3,7 +3,7 @@ library(ggplot2)
 
 # CHM should be pre-loaded by user as a SpatRaster to speed up processing
 
-chm_rast <- rast('G:/Ontario_2023/Block_18/LAS/DLS23/output/raster/chm/B18_DLS23_chm_smooth_p2r_sc0.025_0.1m.tif')
+# chm_rast <- rast('G:/Ontario_2023/Block_18/LAS/DLS23/output/raster/chm/B18_DLS23_chm_smooth_p2r_sc0.025_0.1m.tif')
 
 mask_shaded_pixels <- function(input_dir, output_dir, nir_band_num = 10,
                                output_ext, chm_rast = NULL, chm_threshold = 0.5,

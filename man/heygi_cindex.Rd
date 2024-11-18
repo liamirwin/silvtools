@@ -7,7 +7,7 @@
 heygi_cindex(ttops, comp_input = "vol_convex", maxR = 6, quiet = FALSE)
 }
 \arguments{
-\item{ttops}{tree tops object; expects an X.detected, Y.detected column, typically from silvtools::tree_matching() function}
+\item{ttops}{tree tops object}
 
 \item{comp_input}{string value indicating competition index input; traditionally DBH/Height, we test crown structural metrics}
 
@@ -23,6 +23,13 @@ Calculate Heygi Style Competition Indicies
 }
 \examples{
 \dontrun{
-c <- heygi_cindex(ttops, comp_input = 'vol_convex', maxR = 6)
+
+lasfile <- system.file("extdata", "MixedConifer.laz", package = "lidR")
+las <- readLAS(lasfile)
+norm_las <- normalize_height(las, tin())
+chm <- rasterize_canopy(norm_las, p2r(subcircle = 0.25), res = 1)
+ttops <- locate_trees(chm, algorithm = lmf(ws = 2, hmin = 5))
+
+c <- heygi_cindex(ttops, comp_input = 'Z', maxR = 6)
 }
 }

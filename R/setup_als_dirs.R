@@ -21,7 +21,7 @@ setup_als_dirs <- function(proj_dir){
   # Doc intended to store relevant literature, site info, data collection info
   # Script intended to house R code and other code used to process input dataset
 
-  targ_dirs <- file.path(proj_dir, c('input','output','doc', 'script',
+  targ_dirs <- file.path(proj_dir, c('input','output',
                                      'input/las',
                                      'input/las/norm',
                                      'input/las/class',

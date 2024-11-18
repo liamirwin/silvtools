@@ -7,7 +7,7 @@
 generate_pixel_metrics(
   proj_dir,
   res = 1,
-  metrics = c("basic"),
+  metrics_to_compute = c("basic"),
   zmin = NULL,
   num_cores = 1L,
   chunk_buf = NULL,
@@ -16,7 +16,9 @@ generate_pixel_metrics(
   mets_output_dir = NULL,
   abs = TRUE,
   SA_attribute = "ScanAngle",
-  is_rads = FALSE
+  is_rads = FALSE,
+  pabove_threshold = c(2, 5),
+  filter = NULL
 )
 }
 \arguments{
@@ -24,7 +26,7 @@ generate_pixel_metrics(
 
 \item{res}{CHM resolution in meters. Default is 1.}
 
-\item{metrics}{Sets of metrics to generate. Default is 'basic'. 'percentiles' and 'scan angle' are also available.}
+\item{metrics_to_compute}{Sets of metrics to generate. Default is 'basic'. 'percentiles', 'scan angle', and 'pzabove' are also available.}
 
 \item{zmin}{Minimum Z value of points to consider in metrics. Default NA but EFI's often use 2m}
 
@@ -43,6 +45,8 @@ generate_pixel_metrics(
 \item{SA_attribute}{Scan angle attribute name. Default is 'ScanAngle'.}
 
 \item{is_rads}{Boolean to determine if Scan Angle values are in radians. Default is FALSE.}
+
+\item{pabove_threshold}{Threshold value for percentage above metrics. Default is 2m and 5m}
 }
 \value{
 Saves lidar pixel metrics locally within proj_dir

@@ -15,7 +15,9 @@ generate_chm(
   acq = NULL,
   clamp = FALSE,
   min_clamp = 0,
-  max_clamp = 50
+  max_clamp = 50,
+  dsm = FALSE,
+  filter = NULL
 )
 }
 \arguments{
@@ -40,6 +42,8 @@ generate_chm(
 \item{min_clamp}{Minimum value to clamp CHM at. Default is 0.}
 
 \item{max_clamp}{Maximum value to clamp CHM at. Default is 50.}
+
+\item{dsm}{Generate DSM from non-normalized LAS files. Default is FALSE.}
 }
 \value{
 Saves a CHM locally as well as smoothed and filled versions of the CHM.
