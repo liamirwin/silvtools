@@ -25,13 +25,3 @@ to assign tree IDs to each point in the LAS file that belongs to a tree. The
 resulting LAS file will have an additional attribute called "treeID" that
 contains the ID of the tree to which each point belongs.
 }
-\examples{
-
-lasfile <- system.file("extdata", "MixedConifer.laz", package="lidR")
-las <- readLAS(lasfile)
-norm_las <- normalize_height(las)
-
-
-
-
-}

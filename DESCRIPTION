@@ -11,6 +11,7 @@ License: MIT + file LICENSE
 Imports:
     alphashape3d,
     assertthat,
+    cli,
     crayon,
     data.table,
     dplyr,
@@ -38,6 +39,7 @@ Imports:
     terra,
     tictoc,
     tidyselect,
+    tidyterra,
     viridis,
     whitebox
 Encoding: UTF-8

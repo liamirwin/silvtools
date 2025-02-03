@@ -69,3 +69,21 @@ chunk_data <- function(df, size = 10000){
   # Split the data into chunks using the indices
   split(df, indices)
 }
+
+
+coords_to_cols <- function(df) {
+  # Extract x, y, and z coordinates from the geometry column
+  df <- df %>% mutate(x = st_coordinates(.)[, 1],
+                      y = st_coordinates(.)[, 2],
+                      z = st_coordinates(.)[, 3])
+  print("xyz coordinates extracted as columns")
+
+  return(df)
+}
+
+# New function only does it if Z exists, otherwise does x and y
+# Also runs a check to see that its an sf point object
+
+
+
+

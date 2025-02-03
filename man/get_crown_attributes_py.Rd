@@ -43,16 +43,16 @@ The convex hull computation is based on the \code{ConvexHull} function from the 
 
 This function computes the following metrics:
 \itemize{
-\item \strong{Zmax}: Maximum height of the tree points.
-\item \strong{Zq999}: 99.9th percentile of the height values.
-\item \strong{Zq99}: 99th percentile of the height values.
-\item \strong{Z_mean}: Mean height of the tree points.
-\item \strong{n_points}: Number of points in the crown.
-\item \strong{vol_convex}: Volume of the convex hull around the points.
-\item \strong{CV_Z}: Coefficient of variation of the height (Z) values.
-\item \strong{CRR}: Crown ratio, defined as the ratio of the difference between mean and minimum height to the difference between maximum and minimum height.
-\item \strong{RCC_mean, GCC_mean, BCC_mean}: Mean relative chromatic coordinates if RGB channels are provided.
-\item \strong{RCC_median, GCC_median, BCC_median}: Median relative chromatic coordinates if RGB channels are provided.
+   \item \strong{Zmax}: Maximum height of the tree points.
+   \item \strong{Zq999}: 99.9th percentile of the height values.
+   \item \strong{Zq99}: 99th percentile of the height values.
+   \item \strong{Z_mean}: Mean height of the tree points.
+   \item \strong{n_points}: Number of points in the crown.
+   \item \strong{vol_convex}: Volume of the convex hull around the points.
+   \item \strong{CV_Z}: Coefficient of variation of the height (Z) values.
+   \item \strong{CRR}: Crown ratio, defined as the ratio of the difference between mean and minimum height to the difference between maximum and minimum height.
+   \item \strong{RCC_mean, GCC_mean, BCC_mean}: Mean relative chromatic coordinates if RGB channels are provided.
+   \item \strong{RCC_median, GCC_median, BCC_median}: Median relative chromatic coordinates if RGB channels are provided.
 }
 }
 \note{
@@ -72,12 +72,14 @@ Ensure that the Python packages \code{numpy} and \code{scipy} are installed in t
 }
 
 \examples{
-Miniconda path with numpy and scipy G:/calc_convex_volume/crown_vol_conda
+\dontrun{
+# Miniconda path with numpy and scipy G:/calc_convex_volume/crown_vol_conda
 conda_path <- "G:/calc_convex_volume/crown_vol_conda/python.exe"
- Specify the path to your Python executable if necessary
+# Specify the path to your Python executable if necessary
 use_python(conda_path, required = TRUE)
 np <- import("numpy")
 scipy_spatial <- import("scipy.spatial")
 QhullError <- import("scipy.spatial.qhull", convert = FALSE)$QhullError
+}
 
 }

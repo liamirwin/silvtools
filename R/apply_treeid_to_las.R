@@ -19,12 +19,6 @@
 #' @importFrom tictoc tic toc
 #' @export
 #'
-#' @examples
-#'
-#' lasfile <- system.file("extdata", "MixedConifer.laz", package="lidR")
-#' las <- readLAS(lasfile)
-#' norm_las <- normalize_height(las)
-#'
 #'
 #'
 #'

@@ -16,6 +16,10 @@ get_alphashape_metrics_py(
 \item{chunk}{A LAS object or a file path to a LAS file containing tree point cloud data. The data must include tree IDs and (optionally) RGB color channels.}
 
 \item{RGB}{Logical; if \code{TRUE}, the function computes chromatic coordinates (RCC, GCC, BCC) using the provided color channels (R, G, B). Default is \code{FALSE}.}
+
+\item{np}{The \code{numpy} Python package, which must be installed in the Python environment. Default is \code{numpy}.}
+
+\item{scipy_spatial}{The \code{scipy.spatial} Python package, which must be installed in the Python environment. Default is \code{scipy.spatial}.}
 }
 \value{
 A data frame containing crown metrics for each tree, including:

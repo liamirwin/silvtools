@@ -14,7 +14,8 @@ approximate_chm_crowns(
   crown_height_threshold = 0.25,
   vis = FALSE,
   chm_ext = "smooth",
-  window_size = NULL
+  window_size = NULL,
+  lmf_ext = NULL
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ approximate_chm_crowns(
 \item{chm_ext}{A string specifying the extension of the CHM file. Default is 'smooth'.}
 
 \item{window_size}{A numeric specifying the window size for the segmentation method. Default is NULL.}
+
+\item{lmf_ext}{A string specifying the custom pattern for tree top files. Default is 'lmf_ws_{window_size}'.}
 }
 \value{
 A list containing the results of each segmentation method.

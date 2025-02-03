@@ -11,7 +11,8 @@ summarize_grid(
   summary_var = "cindex",
   summary_fun = "mean",
   count_trees = FALSE,
-  by_species = FALSE
+  group_var = NULL,
+  return_points_and_grid = FALSE
 )
 }
 \arguments{
@@ -25,9 +26,11 @@ summarize_grid(
 
 \item{summary_fun}{The summary function to apply (default is 'mean').}
 
-\item{count_trees}{Logical argument to count tree tops per cell or not (default is false)}
+\item{count_trees}{Logical argument to count tree tops per cell or not (default is FALSE).}
 
-\item{by_species}{Logical argument; if TRUE, summarization will be grouped by a cateogrical column: 'species' result will be summary variable for each species}
+\item{group_var}{The name of the variable to group by (e.g., "species", "crown_class", "status"). If NULL, no grouping is performed (default is NULL).}
+
+\item{return_points_and_grid}{Logical argument. If TRUE, the function returns a list containing the original points with grid IDs and the grid itself. If FALSE (default), it returns the summarized grid.}
 }
 \value{
 An SF object with the same CRS as the input data, containing the summarized variable for each grid cell.
@@ -38,21 +41,25 @@ across a regular grid (either square or hexagonal) of a specified area.
 }
 \examples{
 \dontrun{
-
 # Create an example point dataset
 toy_data <- data.frame(
   x = c(1, 2, 3, 4, 5, 6),
   y = c(1, 2, 3, 4, 5, 6),
-  cindex = c(10, 20, 30, 40, 50, 60)
+  cindex = c(10, 20, 30, 40, 50, 60),
+  species = c("A", "B", "A", "B", "A", "B")
 )
 
 # Convert to an SF object
 points_sf <- sf::st_as_sf(toy_data, coords = c("x", "y"), crs = 4326)
 
-# Call the summarize_grid function
-result <- summarize_grid(points_sf, grid_area = 4, grid_shape = 'square', summary_var = 'cindex', summary_fun = 'mean')
+# Call the summarize_grid function, grouped by species
+result_species <- summarize_grid(points_sf, grid_area = 4, grid_shape = 'square', summary_var = 'cindex', summary_fun = 'mean', group_var = "species")
+
+#Call the function without grouping
+result_no_group <- summarize_grid(points_sf, grid_area = 4, grid_shape = 'square', summary_var = 'cindex', summary_fun = 'mean')
 
 # Print the result
-print(result)
+print(result_species)
+print(result_no_group)
 }
 }

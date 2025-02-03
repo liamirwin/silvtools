@@ -223,7 +223,7 @@ server <- function(input, output, session) {
     )
 
     if (is.na(alpha_value)) {
-      showNotification("Warning: Alpha value is missing.", type = "warning", duration = 5, closeButton = TRUE, color = "yellow")
+      showNotification("Warning: Alpha value is missing.", type = "warning", duration = 5, closeButton = TRUE)
       return()
     }
 
@@ -242,7 +242,7 @@ server <- function(input, output, session) {
     if (!is.null(result)) {
       plot_data(result)
     } else {
-      showNotification("Error: Could not compute the 3D hull.", type = "error", duration = 5, closeButton = TRUE, color = "red")
+      showNotification("Error: Could not compute the 3D hull.", type = "error", duration = 5, closeButton = TRUE)
     }
   })
 
