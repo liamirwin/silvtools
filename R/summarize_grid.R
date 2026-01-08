@@ -51,21 +51,16 @@ summarize_grid <- function(points_sf, grid_area = 400, grid_shape = 'square',
     cli::cli_abort("points_sf must be an sf object.")
   }
 
-
   if(!return_points_and_grid){
-
-  if (!summary_var %in% names(points_sf)) {
-    cli::cli_abort("summary_var '{summary_var}' not found in points_sf.")
-  }
-
-  if (!(summary_fun %in% c("mean", "median", "sum", "min", "max"))) {
-    cli::cli_abort("Invalid summary_fun. Must be one of: mean, median, sum, min, max")
-  }
-
-  if (!is.null(group_var) && !group_var %in% names(points_sf)) {
-    cli::cli_abort("group_var '{group_var}' not found in points_sf.")
-  }
-
+    if (!summary_var %in% names(points_sf)) {
+      cli::cli_abort("summary_var '{summary_var}' not found in points_sf.")
+    }
+    if (!(summary_fun %in% c("mean", "median", "sum", "min", "max"))) {
+      cli::cli_abort("Invalid summary_fun. Must be one of: mean, median, sum, min, max")
+    }
+    if (!is.null(group_var) && !group_var %in% names(points_sf)) {
+      cli::cli_abort("group_var '{group_var}' not found in points_sf.")
+    }
   }
 
   # Calculate cell size
@@ -73,7 +68,6 @@ summarize_grid <- function(points_sf, grid_area = 400, grid_shape = 'square',
                       square = sqrt(grid_area),
                       hexagon = sqrt((2 * grid_area) / (3 * sqrt(3))) * sqrt(3),
                       cli::cli_abort("Invalid grid_shape: must be 'square' or 'hexagon'"))
-
 
   cli::cli_alert("Creating {grid_shape} grid with cell size: {round(cell_size, 1)}m")
 
@@ -89,27 +83,22 @@ summarize_grid <- function(points_sf, grid_area = 400, grid_shape = 'square',
 
   grid <- grid %>% st_as_sf() %>% rowid_to_column(var = 'grid_id')
 
-
   # Calculate summaries
 
-  # Add grid ID to points
-  points_sf <- st_join(points_sf, st_as_sf(grid), join = st_within)
-
+  # Assign each tree to the nearest grid cell
+  nearest_idx <- st_nearest_feature(points_sf, grid)
+  points_sf$grid_id <- grid$grid_id[nearest_idx]
 
   if(return_points_and_grid){
-
     out <- list(points_sf, grid)
     names(out) <- c("points", "grid")
-
     return(out)
   }
 
-
   if (!is.null(group_var)) {
     cli::cli_alert(glue("Summarizing {summary_var} by {group_var} across {grid_shape} grid ({grid_area})m²..."))
-
     summaries <- points_sf %>%
-      group_by(grid_id, !!sym(group_var)) %>% # Use !!sym to unquote the group_var
+      group_by(grid_id, !!sym(group_var)) %>%
       summarize(across(all_of(summary_var), match.fun(summary_fun), .names = paste0(summary_fun, "_", summary_var)),
                 n_trees = if (count_trees) n() else NULL,
                 .groups = 'drop') %>% sf::st_drop_geometry()
@@ -123,15 +112,11 @@ summarize_grid <- function(points_sf, grid_area = 400, grid_shape = 'square',
   }
 
   grid_sf <- sf::st_sf(geometry = grid)
-
-  grid_summary <- left_join(grid_sf, summaries, by = c("grid_id" = "grid_id"))
-
-  # Remove rows where the summary variable is NA (meaning no points in that grid cell)
+  grid_summary <- left_join(grid_sf, summaries, by = "grid_id")
   grid_summary <- grid_summary %>%
     filter(!is.na(.data[[paste0(summary_fun, "_", summary_var)]]))
 
   cli::cli_alert_success("Grid summarization complete.")
-
   tictoc::toc()
 
   return(grid_summary)

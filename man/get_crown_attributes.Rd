@@ -4,33 +4,52 @@
 \alias{get_crown_attributes}
 \title{Calculate crown attributes for a set of tree points}
 \usage{
-get_crown_attributes(X, Y, Z, R = NULL, G = NULL, B = NULL)
+get_crown_attributes(
+  X,
+  Y,
+  Z,
+  R = NULL,
+  G = NULL,
+  B = NULL,
+  ReturnNumber = NULL,
+  filter_return1 = FALSE,
+  filter_above_zmean = FALSE
+)
 }
 \arguments{
-\item{X}{Numeric vector, x-coordinates of tree points}
+\item{X}{Numeric vector, x-coordinates of tree points.}
 
-\item{Y}{Numeric vector, y-coordinates of tree points}
+\item{Y}{Numeric vector, y-coordinates of tree points.}
 
-\item{Z}{Numeric vector, z-coordinates of tree points}
+\item{Z}{Numeric vector, z-coordinates of tree points.}
 
-\item{R}{Numeric vector, red channel of tree points (optional)}
+\item{R}{Numeric vector, red channel of tree points (optional).}
 
-\item{G}{Numeric vector, green channel of tree points (optional)}
+\item{G}{Numeric vector, green channel of tree points (optional).}
 
-\item{B}{Numeric vector, blue channel of tree points (optional)}
+\item{B}{Numeric vector, blue channel of tree points (optional).}
+
+\item{ReturnNumber}{Numeric vector, return number for each tree point (optional).}
+
+\item{filter_return1}{Logical, if TRUE and ReturnNumber is provided, only use points where ReturnNumber == 1 for spectral metrics. Defaults to FALSE.}
+
+\item{filter_above_zmean}{Logical, if TRUE, only use points with Z greater than Z_mean for spectral metrics. Defaults to FALSE.}
 }
 \value{
-A data frame with columns for each crown attribute. If color channels (R, G, B) are provided,
-the data frame will also include the mean and median of the relative chromatic coordinates (RCC, GCC, BCC).
+A data frame with columns for each crown attribute.
 }
 \description{
 This function calculates various crown attributes for a set of 3D tree points including:
-crown height (Zmax, Zq999, Zq99, Z_mean), crown size (n_points, vol_convex, vol_concave), crown complexity (CV_Z, CRR), and
-relative chromatic coordinates (RCC, GCC, BCC).
+crown height (Zmax, Zq999, Zq99, Z_mean), point structure metrics (n_points, CV_Z, CRR,
+additional vertical distribution percentiles, skewness, and entropy), and a pzabove2 metric
+(proportion of returns above 2m). If color channels (R, G, B) are provided, it computes the
+relative chromatic coordinates (RCC, GCC, BCC), basic RGB statistics, and HSV metrics.
 }
 \examples{
 \dontrun{
-# For example usage, see the parent function get_alphashape_metrics()
+# Example usage:
+attributes <- get_crown_attributes(X, Y, Z, R, G, B, ReturnNumber,
+                                   filter_return1 = TRUE, filter_above_zmean = TRUE)
 }
 
 }

@@ -122,6 +122,9 @@ get_crown_attributes_py <- function(X, Y, Z, R = NULL, G = NULL, B = NULL, np, s
     df$RCC_median <- median(RCC, na.rm = TRUE)
     df$GCC_median <- median(GCC, na.rm = TRUE)
     df$BCC_median <- median(BCC, na.rm = TRUE)
+    df$RCC_sd <- sd(RCC, na.rm = TRUE)
+    df$GCC_sd <- sd(GCC, na.rm = TRUE)
+    df$BCC_sd <- sd(BCC, na.rm = TRUE)
   }
 
   return(df)

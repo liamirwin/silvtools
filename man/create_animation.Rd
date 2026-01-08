@@ -7,7 +7,7 @@ Animates solar irradiance tifs (or any images) into gif and saves locally}
 \usage{
 create_animation(
   proj_dir,
-  fps = 10,
+  delay = 10,
   label = TRUE,
   filetype = ".tif$",
   sitename
@@ -16,7 +16,7 @@ create_animation(
 \arguments{
 \item{proj_dir}{Directory where rasters from solar_simulator are stored (.tifs), creates a /gifs output folder for saving}
 
-\item{fps}{Chosen frames per second for final gif; change depending on number of images default is 10 fps}
+\item{delay}{Delay between frames in 1/100; default is 10 (10 frames per second)}
 
 \item{label}{Logical; TRUE/FALSE. Determines if final animation is annotated with YYYY-MM-DD HH:MM:SS time stamp for each frame}
 

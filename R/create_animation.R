@@ -1,7 +1,7 @@
 #' Create Animation
 #' Animates solar irradiance tifs (or any images) into gif and saves locally
 #' @param proj_dir Directory where rasters from solar_simulator are stored (.tifs), creates a /gifs output folder for saving
-#' @param fps Chosen frames per second for final gif; change depending on number of images default is 10 fps
+#' @param delay Delay between frames in 1/100; default is 10 (10 frames per second)
 #' @param label Logical; TRUE/FALSE. Determines if final animation is annotated with YYYY-MM-DD HH:MM:SS time stamp for each frame
 #' @param filetype File type of animation images; default assumes raster in .tif format
 #' @param sitename string name of site ex 'CT1P1'
@@ -15,7 +15,7 @@
 #' create_animation(proj_dir, sitename = 'CT1P1')
 #' }
 create_animation <- function(proj_dir,
-                             fps = 10,
+                             delay = 10,
                              label = TRUE,
                              filetype = '.tif$',
                              sitename){
@@ -59,15 +59,15 @@ create_animation <- function(proj_dir,
 
   # Create an animated GIF with target frames per second
   animated_gif <- magick::image_join(image_list)
-  img_animated = magick::image_animate(animated_gif, fps = fps)
+  img_animated = magick::image_animate(animated_gif, delay = delay)
   # Output directory for gif
   gif_dir <- glue::glue('{proj_dir}/gifs')
   if(!dir.exists(gif_dir)){dir.create(gif_dir)}
   # Write gif, lengthly process...
   magick::image_write(image = img_animated,
-                      path = glue::glue('{gif_dir}/{sitename}_{fps}FPS.gif'))
+                      path = glue::glue('{gif_dir}/{sitename}_{delay/100}s_delay.gif'))
   print(glue::glue('Successfully created and wrote irradiance gif with
-                 length(image_list) frames at {fps}FPS
+                 length(image_list) at {delay/100} second delay between frames
                  for {sitename} to {proj_dir}/gifs'))
   tictoc::toc()
 }
